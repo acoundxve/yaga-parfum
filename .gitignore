@@ -1,0 +1,24 @@
+# Dependencies
+/node_modules
+
+# Build output
+/dist
+/tmp
+/out-tsc
+/.angular/cache
+
+# Environment (llaves reales de Supabase)
+src/environments/environment.local.ts
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# Vercel
+.vercel

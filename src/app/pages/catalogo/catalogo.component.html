@@ -1,0 +1,204 @@
+<section class="hero">
+  <div class="hero-txt">
+    <p class="kicker">Catálogo digital</p>
+    <h1>Encuentra tu <em>fragancia</em>.</h1>
+    <p class="sub">
+      Perfumes seleccionados de {{ negocio }}. Elige, encarga y te contactamos.
+    </p>
+  </div>
+</section>
+
+<section class="filtros">
+  <input
+    type="search"
+    class="buscar"
+    placeholder="Buscar perfume, marca o nota…"
+    [ngModel]="busqueda()"
+    (ngModelChange)="busqueda.set($event)"
+  />
+  <select class="orden" [ngModel]="orden()" (ngModelChange)="orden.set($event)">
+    <option value="destacados">Ordenar por…</option>
+    <option value="az">Nombre: A → Z</option>
+    <option value="za">Nombre: Z → A</option>
+    <option value="precio-asc">Precio: menor a mayor</option>
+    <option value="precio-desc">Precio: mayor a menor</option>
+  </select>
+  <div class="chips">
+    @for (c of categorias(); track c) {
+      <button
+        class="chip"
+        [class.on]="categoria() === c"
+        (click)="categoria.set(c)"
+      >
+        {{ c }}
+      </button>
+    }
+  </div>
+</section>
+
+@if (cargando()) {
+  <p class="aviso">Cargando catálogo…</p>
+} @else if (filtrados().length === 0) {
+  <p class="aviso">No hay perfumes que coincidan con tu búsqueda.</p>
+} @else {
+  <section class="grid">
+    @for (p of filtrados(); track p.id) {
+      <app-perfume-card [perfume]="p" (agregar)="agregar($event)" (verNotas)="abrirNotas($event)" />
+    }
+  </section>
+}
+
+<!-- Botón flotante del carrito -->
+@if (carrito.cantidadTotal() > 0) {
+  <button class="fab" (click)="drawerAbierto.set(true)">
+    🛒 <span class="fab-count">{{ carrito.cantidadTotal() }}</span>
+  </button>
+}
+
+<!-- Modal de presentación (frasco / decants) -->
+@if (perfumeElegir(); as p) {
+  <div class="overlay" (click)="perfumeElegir.set(null)"></div>
+  <div class="pres-modal">
+    <header class="notas-head">
+      <div>
+        <p class="notas-marca">{{ p.marca }}</p>
+        <h2>{{ p.nombre }}</h2>
+      </div>
+      <button class="x" (click)="perfumeElegir.set(null)">✕</button>
+    </header>
+
+    <p class="pres-sub">Frasco completo:</p>
+    <div class="pres-lista">
+      @for (op of frascosDe(p); track op.ml) {
+        <button class="pres-op" [disabled]="op.stock <= 0" (click)="elegirPresentacion(p, op)">
+          <span class="pres-nom">
+            {{ op.label }}
+            @if (op.stock <= 0) { <em class="pres-tag off">Agotado</em> }
+            @else if (op.stock < 5) { <em class="pres-tag pocas">Quedan {{ op.stock }}</em> }
+            @else { <em class="pres-tag">Original</em> }
+          </span>
+          <span class="pres-precio">{{ moneda }} {{ op.precio | number: '1.0-0' }}</span>
+        </button>
+      }
+    </div>
+
+    <p class="pres-sub">Decants (muestras):</p>
+    <div class="pres-lista">
+      @for (op of decantsDe(p); track op.ml) {
+        <button class="pres-op" (click)="elegirPresentacion(p, op)">
+          <span class="pres-nom">
+            {{ op.label }}
+            <em class="pres-tag">muestra</em>
+          </span>
+          <span class="pres-precio">{{ moneda }} {{ op.precio | number: '1.0-0' }}</span>
+        </button>
+      }
+    </div>
+    <p class="pres-nota">Los decants son muestras del perfume original en frascos pequeños.</p>
+  </div>
+}
+
+<!-- Modal de notas olfativas -->
+@if (perfumeNotas(); as p) {
+  <div class="overlay" (click)="perfumeNotas.set(null)"></div>
+  <div class="notas-modal">
+    <header class="notas-head">
+      <div>
+        <p class="notas-marca">{{ p.marca }}</p>
+        <h2>{{ p.nombre }}</h2>
+      </div>
+      <button class="x" (click)="perfumeNotas.set(null)">✕</button>
+    </header>
+
+    @if (hayNotas(p)) {
+      <div class="piramide">
+        @if (p.notasSalida) {
+          <div class="nivel">
+            <span class="nivel-tit">Notas de salida</span>
+            <p>{{ p.notasSalida }}</p>
+          </div>
+        }
+        @if (p.notasCorazon) {
+          <div class="nivel">
+            <span class="nivel-tit">Notas de corazón</span>
+            <p>{{ p.notasCorazon }}</p>
+          </div>
+        }
+        @if (p.notasFondo) {
+          <div class="nivel">
+            <span class="nivel-tit">Notas de fondo</span>
+            <p>{{ p.notasFondo }}</p>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="notas-vacio">
+        Todavía no hemos cargado las notas de este perfume.
+      </p>
+    }
+
+    <a class="notas-frag" [href]="fragranticaUrl(p)" target="_blank" rel="noopener">
+      Ver ficha completa en Fragrantica ↗
+    </a>
+  </div>
+}
+
+<!-- Drawer del carrito / encargo -->
+@if (drawerAbierto()) {
+  <div class="overlay" (click)="drawerAbierto.set(false)"></div>
+  <aside class="drawer">
+    <header class="drawer-head">
+      <h2>Tu encargo</h2>
+      <button class="x" (click)="drawerAbierto.set(false)">✕</button>
+    </header>
+
+    @if (confirmado()) {
+      <div class="ok">
+        <div class="ok-ico">✅</div>
+        <h3>¡Encargo enviado!</h3>
+        <p>Se guardó tu pedido y se abrió WhatsApp para confirmarlo. ¡Gracias!</p>
+        <button class="btn" (click)="confirmado.set(false); drawerAbierto.set(false)">
+          Seguir viendo
+        </button>
+      </div>
+    } @else if (carrito.items().length === 0) {
+      <p class="vacio">Tu carrito está vacío. Agrega perfumes desde el catálogo.</p>
+    } @else {
+      <ul class="lista">
+        @for (i of carrito.items(); track i.perfumeId + '_' + i.tipo + '_' + i.ml) {
+          <li>
+            <div class="li-info">
+              <strong>{{ i.nombre }}</strong>
+              <em class="li-pres">{{ i.presentacion }}</em>
+              <span>{{ moneda }} {{ i.precio | number: '1.0-0' }}</span>
+            </div>
+            <div class="li-qty">
+              <button (click)="carrito.cambiarCantidad(i.perfumeId, i.tipo, i.ml, i.cantidad - 1)">−</button>
+              <span>{{ i.cantidad }}</span>
+              <button
+                [disabled]="i.tipo === 'frasco' && i.cantidad >= stockItem(i)"
+                (click)="carrito.cambiarCantidad(i.perfumeId, i.tipo, i.ml, i.cantidad + 1)"
+              >+</button>
+            </div>
+            <button class="li-del" (click)="carrito.quitar(i.perfumeId, i.tipo, i.ml)">🗑</button>
+          </li>
+        }
+      </ul>
+
+      <div class="total">
+        <span>Total</span>
+        <strong>{{ moneda }} {{ carrito.total() | number: '1.0-0' }}</strong>
+      </div>
+
+      <div class="form">
+        <input placeholder="Tu nombre" [(ngModel)]="clienteNombre" />
+        <input placeholder="Tu teléfono / WhatsApp" [(ngModel)]="clienteTelefono" />
+        <textarea placeholder="Nota (opcional): dirección, referencia…" rows="2" [(ngModel)]="nota"></textarea>
+      </div>
+
+      <button class="btn btn-wa" [disabled]="enviando()" (click)="confirmarEncargo()">
+        {{ enviando() ? 'Enviando…' : 'Enviar encargo por WhatsApp' }}
+      </button>
+    }
+  </aside>
+}

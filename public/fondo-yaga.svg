@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="sky" cx="50%" cy="20%" r="90%">
+      <stop offset="0%" stop-color="#241d12"/>
+      <stop offset="45%" stop-color="#14110c"/>
+      <stop offset="100%" stop-color="#0b0b0f"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0d69a"/>
+      <stop offset="1" stop-color="#a9823f"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(240,214,154,0.85)"/>
+      <stop offset="1" stop-color="rgba(217,176,106,0.35)"/>
+    </linearGradient>
+    <filter id="soft"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#sky)"/>
+
+  <!-- halo -->
+  <ellipse cx="800" cy="360" rx="520" ry="360" fill="#d9b06a" opacity="0.10" filter="url(#soft)"/>
+
+  <!-- Figura silueta (placeholder de Light Yagami) -->
+  <g fill="#05050a" opacity="0.94">
+    <!-- cabeza -->
+    <ellipse cx="800" cy="330" rx="95" ry="110"/>
+    <!-- pelo -->
+    <path d="M700 300 q-8 -150 100 -170 q108 20 100 170 q-40 -70 -100 -70 q-60 0 -100 70 Z"/>
+    <!-- torso / hombros / gabardina -->
+    <path d="M620 470 q180 -90 360 0 q70 40 90 250 q30 260 40 480 l-620 0 q10 -220 40 -480 q20 -210 90 -250 Z"/>
+    <!-- brazos hacia el centro sosteniendo frascos -->
+    <path d="M655 520 q-80 120 20 210 l90 -40 q-70 -70 -30 -150 Z"/>
+    <path d="M945 520 q80 120 -20 210 l-90 -40 q70 -70 30 -150 Z"/>
+  </g>
+
+  <!-- Frasco izquierdo -->
+  <g transform="translate(690 690)">
+    <rect x="-8" y="-70" width="16" height="26" rx="3" fill="url(#gold)"/>
+    <rect x="-26" y="-46" width="52" height="14" rx="4" fill="url(#gold)"/>
+    <rect x="-40" y="-32" width="80" height="120" rx="16" fill="url(#glass)" stroke="#f0d69a" stroke-opacity="0.5" stroke-width="2"/>
+    <rect x="-30" y="8" width="60" height="70" rx="8" fill="#0b0b0f" opacity="0.25"/>
+  </g>
+
+  <!-- Frasco derecho -->
+  <g transform="translate(910 690)">
+    <rect x="-8" y="-70" width="16" height="26" rx="3" fill="url(#gold)"/>
+    <rect x="-26" y="-46" width="52" height="14" rx="4" fill="url(#gold)"/>
+    <rect x="-40" y="-32" width="80" height="120" rx="16" fill="url(#glass)" stroke="#f0d69a" stroke-opacity="0.5" stroke-width="2"/>
+    <rect x="-30" y="8" width="60" height="70" rx="8" fill="#0b0b0f" opacity="0.25"/>
+  </g>
+
+  <!-- Nota discreta -->
+  <text x="800" y="1150" text-anchor="middle" font-family="Inter, sans-serif" font-size="22"
+        fill="#d9b06a" opacity="0.5" letter-spacing="6">YAGA PARFUM · IMAGEN DE MUESTRA</text>
+</svg>

@@ -1,0 +1,240 @@
+<section class="admin">
+  <div class="admin-head">
+    <h1>Panel de inventario</h1>
+    @if (!usaSupabase) {
+      <span class="pill-demo" title="Configura Supabase en environment.ts">Modo demo (datos locales)</span>
+    } @else {
+      <span class="pill-live">Conectado a Supabase</span>
+    }
+  </div>
+
+  <!-- Resumen -->
+  <div class="cards-kpi">
+    <div class="kpi"><span>{{ perfumes().length }}</span><small>Perfumes</small></div>
+    <div class="kpi"><span>{{ totalInventario() }}</span><small>Unidades en stock</small></div>
+    <div class="kpi warn"><span>{{ bajoStock() }}</span><small>Bajo stock (&lt;5)</small></div>
+    <div class="kpi danger"><span>{{ agotados() }}</span><small>Agotados</small></div>
+    <div class="kpi info"><span>{{ pedidosNuevos() }}</span><small>Pedidos nuevos</small></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button [class.on]="tab() === 'inventario'" (click)="tab.set('inventario')">Inventario</button>
+    <button [class.on]="tab() === 'pedidos'" (click)="tab.set('pedidos')">
+      Pedidos @if (pedidosNuevos() > 0) { <em class="dot">{{ pedidosNuevos() }}</em> }
+    </button>
+  </div>
+
+  <!-- ============ INVENTARIO ============ -->
+  @if (tab() === 'inventario') {
+    <div class="barra-inv">
+      <button class="btn" (click)="nuevo()">+ Nuevo perfume</button>
+      @if (puedeImportar) {
+        <button class="btn btn-ghost" [disabled]="importando()" (click)="importarCatalogo()">
+          {{ importando() ? 'Cargando…' : '⬇ Cargar los 391 perfumes al inventario' }}
+        </button>
+      }
+    </div>
+
+    <div class="inv-filtros">
+      <input
+        type="search"
+        class="buscar"
+        placeholder="Buscar por nombre o marca…"
+        [ngModel]="buscarInv()"
+        (ngModelChange)="buscarInv.set($event)"
+      />
+      <select class="orden" [ngModel]="ordenInv()" (ngModelChange)="ordenInv.set($event)">
+        <option value="reciente">Más recientes</option>
+        <option value="az">Nombre: A → Z</option>
+        <option value="za">Nombre: Z → A</option>
+        <option value="precio-desc">Precio: mayor a menor</option>
+        <option value="precio-asc">Precio: menor a mayor</option>
+        <option value="stock-desc">Stock: mayor a menor</option>
+        <option value="stock-asc">Stock: menor a mayor</option>
+      </select>
+      <span class="inv-count">{{ perfumesFiltrados().length }} de {{ perfumes().length }}</span>
+    </div>
+
+    @if (importando() || importMsg()) {
+      <div class="import-box">
+        <span>{{ importMsg() }}</span>
+        @if (importando()) {
+          <div class="import-bar"><div [style.width.%]="importProgreso()"></div></div>
+        }
+      </div>
+    }
+
+    <div class="tabla">
+      <div class="tr th">
+        <span>Perfume</span><span>Categoría</span><span>Precio</span><span>Stock</span><span>Estado</span><span>Acciones</span>
+      </div>
+      @for (p of perfumesFiltrados(); track p.id) {
+        <div class="tr">
+          <span class="td-nombre">
+            <span class="mini">
+              @if (p.imagenUrl) { <img [src]="p.imagenUrl" [alt]="p.nombre" /> } @else { 🧴 }
+            </span>
+            <span>
+              <strong>{{ p.nombre }}</strong><br /><small>{{ p.marca }}</small>
+            </span>
+          </span>
+          <span>{{ p.categoria }}</span>
+          <span>{{ moneda }} {{ p.precio | number: '1.0-0' }}</span>
+          <span class="td-stock">
+            <button (click)="ajustarStock(p, -1)">−</button>
+            <b>{{ p.stock }}</b>
+            <button (click)="ajustarStock(p, 1)">+</button>
+          </span>
+          <span>
+            @switch (est(p.stock).tipo) {
+              @case ('agotado') { <em class="badge b-agotado">Agotado</em> }
+              @case ('pocas') { <em class="badge b-pocas">Quedan {{ p.stock }}</em> }
+              @default { <em class="badge b-ok">Disponible</em> }
+            }
+          </span>
+          <span class="td-acciones">
+            <button class="mini-btn" (click)="editar(p)">Editar</button>
+            <button class="mini-btn del" (click)="eliminar(p)">Eliminar</button>
+          </span>
+        </div>
+      } @empty {
+        <p class="aviso">Aún no hay perfumes. Agrega el primero con “+ Nuevo perfume”.</p>
+      }
+    </div>
+  }
+
+  <!-- ============ PEDIDOS ============ -->
+  @if (tab() === 'pedidos') {
+    @if (pedidos().length === 0) {
+      <p class="aviso">Todavía no hay pedidos.</p>
+    } @else {
+      <div class="pedidos">
+        @for (ped of pedidos(); track ped.id) {
+          <article class="pedido" [attr.data-estado]="ped.estado">
+            <header>
+              <div>
+                <strong>{{ ped.clienteNombre }}</strong>
+                <a [href]="'https://wa.me/' + ped.clienteTelefono" target="_blank">{{ ped.clienteTelefono }}</a>
+              </div>
+              <span class="fecha">{{ ped.createdAt | date: 'short' }}</span>
+            </header>
+            <ul>
+              @for (i of ped.items; track i.perfumeId + '_' + i.tipo + '_' + i.ml) {
+                <li>{{ i.cantidad }} × {{ i.nombre }} <small class="pres-mini">{{ i.presentacion }}</small> <span>{{ moneda }} {{ i.precio * i.cantidad | number: '1.0-0' }}</span></li>
+              }
+            </ul>
+            @if (ped.nota) { <p class="nota">📝 {{ ped.nota }}</p> }
+            <footer>
+              <strong class="ptotal">Total: {{ moneda }} {{ ped.total | number: '1.0-0' }}</strong>
+              <select [ngModel]="ped.estado" (ngModelChange)="cambiarEstadoPedido(ped.id, $event)">
+                <option value="nuevo">Nuevo</option>
+                <option value="atendido">Atendido</option>
+                <option value="entregado">Entregado</option>
+              </select>
+            </footer>
+          </article>
+        }
+      </div>
+    }
+  }
+</section>
+
+<!-- ============ MODAL EDITAR / NUEVO ============ -->
+@if (editando(); as p) {
+  <div class="overlay" (click)="cancelar()"></div>
+  <div class="modal">
+    <header class="modal-head">
+      <h2>{{ p.id ? 'Editar perfume' : 'Nuevo perfume' }}</h2>
+      <button class="x" (click)="cancelar()">✕</button>
+    </header>
+
+    <div class="modal-body">
+      <div class="img-up">
+        @if (p.imagenUrl) {
+          <img [src]="p.imagenUrl" alt="preview" />
+        } @else {
+          <div class="img-ph">Sin imagen</div>
+        }
+        <label class="btn btn-ghost">
+          {{ subiendo() ? 'Subiendo…' : 'Subir imagen' }}
+          <input type="file" accept="image/*" (change)="onImagen($event)" hidden />
+        </label>
+      </div>
+
+      <div class="campos">
+        <label>Nombre
+          <input [(ngModel)]="p.nombre" placeholder="Noir Absolu" />
+        </label>
+        <div class="dos">
+          <label>Marca
+            <input [(ngModel)]="p.marca" />
+          </label>
+          <label>Categoría
+            <select [(ngModel)]="p.categoria">
+              <option>Hombre</option>
+              <option>Mujer</option>
+              <option>Unisex</option>
+            </select>
+          </label>
+        </div>
+        <div class="frascos-box">
+          <div class="frascos-head">
+            <span>Tamaños de frasco (ml · precio · stock)</span>
+            <button type="button" class="mini-btn" (click)="agregarFrasco()">+ Agregar tamaño</button>
+          </div>
+          <div class="frasco-row frasco-th">
+            <span>ml</span><span>precio ({{ moneda }})</span><span>stock</span><span></span>
+          </div>
+          @for (fr of (p.frascos ?? []); track $index) {
+            <div class="frasco-row">
+              <input type="number" min="0" placeholder="ml" [(ngModel)]="fr.ml" [ngModelOptions]="{ standalone: true }" />
+              <input type="number" min="0" placeholder="precio" [(ngModel)]="fr.precio" [ngModelOptions]="{ standalone: true }" />
+              <input type="number" min="0" placeholder="stock" [(ngModel)]="fr.stock" [ngModelOptions]="{ standalone: true }" />
+              <button type="button" class="fr-del" (click)="quitarFrasco($index)">🗑</button>
+            </div>
+          }
+          <p class="frascos-nota">Ej: 60, 100, 120, 200 ml. Cada tamaño con su precio y su stock. Deja en 0 el tamaño agotado.</p>
+        </div>
+
+        <label>Descripción
+          <textarea rows="2" [(ngModel)]="p.descripcion" placeholder="Familia olfativa, duración…"></textarea>
+        </label>
+        <label>Notas de salida
+          <input [(ngModel)]="p.notasSalida" placeholder="Bergamota, canela, salvia…" />
+        </label>
+        <label>Notas de corazón
+          <input [(ngModel)]="p.notasCorazon" placeholder="Praliné, frutas, flores…" />
+        </label>
+        <label>Notas de fondo
+          <input [(ngModel)]="p.notasFondo" placeholder="Vainilla, oud, ámbar, tonka…" />
+        </label>
+
+        <div class="decant-box">
+          <div class="decant-head">
+            <span>Decants (calculados desde el frasco base · envase {{ moneda }} {{ costoEnvase }})</span>
+          </div>
+          <div class="decant-tr decant-th">
+            <span>Tamaño</span><span>Precio venta</span><span>Costo líquido</span><span>Ganancia</span>
+          </div>
+          @for (dc of decants(p); track dc.ml) {
+            <div class="decant-tr">
+              <span>{{ dc.ml }} ml</span>
+              <span class="dc-precio">{{ moneda }} {{ dc.precio | number: '1.0-0' }}</span>
+              <span>{{ moneda }} {{ dc.costoLiquido | number: '1.0-0' }}</span>
+              <span class="dc-gan">+{{ moneda }} {{ dc.ganancia | number: '1.0-0' }}</span>
+            </div>
+          }
+          <p class="decant-nota">La ganancia ya descuenta líquido y envase. Cambia la capacidad o el costo del envase en environment.ts.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-foot">
+      <button class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
+      <button class="btn" [disabled]="guardando()" (click)="guardar()">
+        {{ guardando() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </div>
+}
