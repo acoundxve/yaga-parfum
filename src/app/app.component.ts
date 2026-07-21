@@ -23,8 +23,6 @@ import { environment } from '../environments/environment';
         @if (auth.esAdmin()) {
           <a routerLink="/admin" routerLinkActive="activo">Panel</a>
           <a class="salir" (click)="auth.logout()">Salir</a>
-        } @else {
-          <a routerLink="/login" routerLinkActive="activo">Admin</a>
         }
       </nav>
     </header>
