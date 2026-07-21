@@ -23,7 +23,7 @@ export const environment = {
 
   // Contraseña del panel de administrador (cámbiala).
   // En modo demo se usa esta. Con Supabase Auth puedes usar login por correo.
-  adminPassword: 'yaga2026',
+  adminPassword: 'acoundzxc12',
 
   nombreNegocio: 'Yaga Parfum',
   moneda: 'RD$',
