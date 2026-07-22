@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { PerfumeService } from '../../services/perfume.service';
 import {
   Perfume,
+  Pedido,
   Presentacion,
   estadoStock,
   presentaciones,
 } from '../../models/perfume.model';
 import { environment } from '../../../environments/environment';
-import { generarFacturaPdf } from '../../utils/factura-pdf';
+import { generarFacturaPdf, enviarFacturaPedido } from '../../utils/factura-pdf';
 
 function vacio(): Perfume {
   return {
@@ -45,7 +46,11 @@ export class AdminComponent implements OnInit {
   ventas = this.data.ventas;
   usaSupabase = this.data.usaSupabase;
 
-  tab = signal<'inventario' | 'pedidos' | 'finanzas' | 'venta-rapida'>('inventario');
+  tab = signal<'inventario' | 'pedidos' | 'pedidos-rechazados' | 'finanzas' | 'venta-rapida'>(
+    'inventario'
+  );
+  procesandoPedidoId = signal<string | null>(null);
+  pedidoMsg = signal('');
   buscarInv = signal('');
   ordenInv = signal<'reciente' | 'az' | 'za' | 'precio-asc' | 'precio-desc' | 'stock-asc' | 'stock-desc'>('reciente');
   editando = signal<Perfume | null>(null);
@@ -66,6 +71,8 @@ export class AdminComponent implements OnInit {
   pedidosNuevos = computed(() =>
     this.pedidos().filter((p) => p.estado === 'nuevo').length
   );
+  pedidosActivos = computed(() => this.pedidos().filter((p) => p.estado !== 'rechazado'));
+  pedidosRechazados = computed(() => this.pedidos().filter((p) => p.estado === 'rechazado'));
 
   // ---------- Finanzas ----------
   capitalInvertido = computed(() => this.compras().reduce((s, c) => s + c.total, 0));
@@ -270,8 +277,48 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  async cambiarEstadoPedido(id: string, estado: 'nuevo' | 'atendido' | 'entregado') {
-    await this.data.actualizarEstadoPedido(id, estado);
+  async marcarEnviado(pedido: Pedido) {
+    if (
+      !confirm(
+        `¿Confirmar que el pedido de ${pedido.clienteNombre} fue enviado? Esto descontará el inventario y generará su factura.`
+      )
+    )
+      return;
+    this.procesandoPedidoId.set(pedido.id);
+    this.pedidoMsg.set('');
+    try {
+      await this.data.marcarPedidoEnviado(pedido);
+      const resultado = await enviarFacturaPedido(pedido, {
+        nombre: environment.nombreNegocio,
+        moneda: this.moneda,
+      });
+      this.pedidoMsg.set(
+        resultado === 'compartido'
+          ? '✅ Pedido enviado y factura compartida.'
+          : '✅ Pedido enviado. Se descargó la factura y se abrió WhatsApp para adjuntarla.'
+      );
+    } catch (e: any) {
+      alert(e?.message ?? 'No se pudo procesar el envío del pedido.');
+    } finally {
+      this.procesandoPedidoId.set(null);
+    }
+  }
+
+  async marcarRechazado(pedido: Pedido) {
+    if (
+      !confirm(
+        `¿Rechazar el pedido de ${pedido.clienteNombre}? Se moverá a Pedidos rechazados y no se descontará inventario.`
+      )
+    )
+      return;
+    this.procesandoPedidoId.set(pedido.id);
+    try {
+      await this.data.actualizarEstadoPedido(pedido.id, 'rechazado');
+    } catch (e: any) {
+      alert(e?.message ?? 'No se pudo rechazar el pedido.');
+    } finally {
+      this.procesandoPedidoId.set(null);
+    }
   }
 
   vrSeleccionarPerfume(p: Perfume) {

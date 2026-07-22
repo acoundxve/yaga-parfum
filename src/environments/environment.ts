@@ -19,7 +19,7 @@ export const environment = {
   // --- Negocio ---
   // Tu número de WhatsApp con código de país, sin + ni espacios.
   // Ejemplo República Dominicana: 18095551234
-  whatsappNumero: '18090000000',
+  whatsappNumero: '18097157578',
 
   // Contraseña del panel de administrador (cámbiala).
   // En modo demo se usa esta. Con Supabase Auth puedes usar login por correo.

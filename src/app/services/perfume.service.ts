@@ -388,8 +388,11 @@ export class PerfumeService {
 
   // ---------- PEDIDOS ----------
 
+  /** Crea el pedido (encargo) tal cual lo pidió el cliente. No toca el
+   *  inventario todavía: eso ocurre recién cuando el admin lo marca como
+   *  "Enviado" (ver `marcarPedidoEnviado`), para no descontar stock de
+   *  encargos que luego se rechacen. */
   async crearPedido(pedido: Pedido): Promise<void> {
-    let pedidoId = pedido.id;
     if (this.usaSupabase) {
       const row = {
         cliente_nombre: pedido.clienteNombre,
@@ -399,22 +402,23 @@ export class PerfumeService {
         total: pedido.total,
         estado: pedido.estado,
       };
-      const { data, error } = await this.sb.client!
-        .from('pedidos')
-        .insert(row)
-        .select('id')
-        .single();
+      const { error } = await this.sb.client!.from('pedidos').insert(row);
       if (error) throw error;
-      pedidoId = data?.id ?? pedidoId;
     } else {
       const lista = [pedido, ...this.leerLocal<Pedido>(LS_PEDIDOS, [])];
       this.guardarLocal(LS_PEDIDOS, lista);
       this.pedidos.set(lista);
     }
+  }
+
+  /** El admin confirma que el encargo se despachó: recién aquí se descuenta
+   *  el inventario y se registran las ventas correspondientes. */
+  async marcarPedidoEnviado(pedido: Pedido): Promise<void> {
     await this.descontarStock(pedido.items, {
-      pedidoId,
+      pedidoId: pedido.id,
       clienteNombre: pedido.clienteNombre,
     });
+    await this.actualizarEstadoPedido(pedido.id, 'enviado');
   }
 
   async cargarPedidos(): Promise<void> {

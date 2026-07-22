@@ -23,6 +23,9 @@
     <button [class.on]="tab() === 'pedidos'" (click)="tab.set('pedidos')">
       Pedidos @if (pedidosNuevos() > 0) { <em class="dot">{{ pedidosNuevos() }}</em> }
     </button>
+    <button [class.on]="tab() === 'pedidos-rechazados'" (click)="tab.set('pedidos-rechazados')">
+      Pedidos rechazados
+    </button>
     <button [class.on]="tab() === 'finanzas'" (click)="tab.set('finanzas')">Finanzas</button>
     <button [class.on]="tab() === 'venta-rapida'" (click)="tab.set('venta-rapida')">Venta rápida</button>
   </div>
@@ -106,36 +109,68 @@
     </div>
   }
 
+  <!-- Plantilla compartida por Pedidos y Pedidos rechazados -->
+  <ng-template #tarjetaPedido let-ped let-soloLectura="soloLectura">
+    <article class="pedido" [attr.data-estado]="ped.estado">
+      <header>
+        <div>
+          <strong>{{ ped.clienteNombre }}</strong>
+          <a [href]="'https://wa.me/' + ped.clienteTelefono" target="_blank">{{ ped.clienteTelefono }}</a>
+        </div>
+        <span class="fecha">{{ ped.createdAt | date: 'short' }}</span>
+      </header>
+      <ul>
+        @for (i of ped.items; track i.perfumeId + '_' + i.tipo + '_' + i.ml) {
+          <li>{{ i.cantidad }} × {{ i.nombre }} <small class="pres-mini">{{ i.presentacion }}</small> <span>{{ moneda }} {{ i.precio * i.cantidad | number: '1.0-0' }}</span></li>
+        }
+      </ul>
+      @if (ped.nota) { <p class="nota">📝 {{ ped.nota }}</p> }
+      <footer>
+        <strong class="ptotal">Total: {{ moneda }} {{ ped.total | number: '1.0-0' }}</strong>
+        @if (!soloLectura && ped.estado === 'nuevo') {
+          <div class="pedido-acciones">
+            <button
+              class="mini-btn ok"
+              [disabled]="procesandoPedidoId() === ped.id"
+              (click)="marcarEnviado(ped)"
+            >✅ Enviado</button>
+            <button
+              class="mini-btn del"
+              [disabled]="procesandoPedidoId() === ped.id"
+              (click)="marcarRechazado(ped)"
+            >❌ Rechazado</button>
+          </div>
+        } @else {
+          <em class="pedido-badge" [class.b-ok]="ped.estado === 'enviado'" [class.b-agotado]="ped.estado === 'rechazado'">
+            {{ ped.estado === 'enviado' ? 'Enviado' : ped.estado === 'rechazado' ? 'Rechazado' : ped.estado }}
+          </em>
+        }
+      </footer>
+    </article>
+  </ng-template>
+
   <!-- ============ PEDIDOS ============ -->
   @if (tab() === 'pedidos') {
-    @if (pedidos().length === 0) {
+    @if (pedidoMsg()) { <p class="aviso">{{ pedidoMsg() }}</p> }
+    @if (pedidosActivos().length === 0) {
       <p class="aviso">Todavía no hay pedidos.</p>
     } @else {
       <div class="pedidos">
-        @for (ped of pedidos(); track ped.id) {
-          <article class="pedido" [attr.data-estado]="ped.estado">
-            <header>
-              <div>
-                <strong>{{ ped.clienteNombre }}</strong>
-                <a [href]="'https://wa.me/' + ped.clienteTelefono" target="_blank">{{ ped.clienteTelefono }}</a>
-              </div>
-              <span class="fecha">{{ ped.createdAt | date: 'short' }}</span>
-            </header>
-            <ul>
-              @for (i of ped.items; track i.perfumeId + '_' + i.tipo + '_' + i.ml) {
-                <li>{{ i.cantidad }} × {{ i.nombre }} <small class="pres-mini">{{ i.presentacion }}</small> <span>{{ moneda }} {{ i.precio * i.cantidad | number: '1.0-0' }}</span></li>
-              }
-            </ul>
-            @if (ped.nota) { <p class="nota">📝 {{ ped.nota }}</p> }
-            <footer>
-              <strong class="ptotal">Total: {{ moneda }} {{ ped.total | number: '1.0-0' }}</strong>
-              <select [ngModel]="ped.estado" (ngModelChange)="cambiarEstadoPedido(ped.id, $event)">
-                <option value="nuevo">Nuevo</option>
-                <option value="atendido">Atendido</option>
-                <option value="entregado">Entregado</option>
-              </select>
-            </footer>
-          </article>
+        @for (ped of pedidosActivos(); track ped.id) {
+          <ng-container *ngTemplateOutlet="tarjetaPedido; context: { $implicit: ped, soloLectura: false }" />
+        }
+      </div>
+    }
+  }
+
+  <!-- ============ PEDIDOS RECHAZADOS ============ -->
+  @if (tab() === 'pedidos-rechazados') {
+    @if (pedidosRechazados().length === 0) {
+      <p class="aviso">No hay pedidos rechazados.</p>
+    } @else {
+      <div class="pedidos">
+        @for (ped of pedidosRechazados(); track ped.id) {
+          <ng-container *ngTemplateOutlet="tarjetaPedido; context: { $implicit: ped, soloLectura: true }" />
         }
       </div>
     }

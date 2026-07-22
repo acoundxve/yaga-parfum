@@ -159,7 +159,7 @@ export interface Pedido {
   nota: string;
   items: ItemPedido[];
   total: number;
-  estado: 'nuevo' | 'atendido' | 'entregado';
+  estado: 'nuevo' | 'atendido' | 'entregado' | 'enviado' | 'rechazado';
   createdAt: string;
 }
 

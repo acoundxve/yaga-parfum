@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
   imports: [CommonModule],
   template: `
     <article class="card" [class.agotado]="agotado">
-      <div class="card-img">
+      <div class="card-img" (click)="perfume.imagenUrl && verImagen.emit(perfume)">
         @if (perfume.imagenUrl) {
           <img [src]="perfume.imagenUrl" [alt]="perfume.nombre" loading="lazy" />
         } @else {
@@ -63,6 +63,7 @@ export class PerfumeCardComponent {
   @Input({ required: true }) perfume!: Perfume;
   agregar = output<Perfume>();
   verNotas = output<Perfume>();
+  verImagen = output<Perfume>();
   moneda = environment.moneda;
 
   private get total(): number {

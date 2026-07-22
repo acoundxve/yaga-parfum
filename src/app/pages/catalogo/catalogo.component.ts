@@ -39,6 +39,7 @@ export class CatalogoComponent implements OnInit {
   confirmado = signal(false);
   perfumeNotas = signal<Perfume | null>(null);
   perfumeElegir = signal<Perfume | null>(null);
+  imagenAmpliada = signal<Perfume | null>(null);
 
   // Datos del cliente para el encargo
   clienteNombre = '';
@@ -110,13 +111,12 @@ export class CatalogoComponent implements OnInit {
     this.perfumeNotas.set(p);
   }
 
-  hayNotas(p: Perfume): boolean {
-    return tieneNotas(p);
+  abrirImagen(p: Perfume) {
+    this.imagenAmpliada.set(p);
   }
 
-  fragranticaUrl(p: Perfume): string {
-    const q = encodeURIComponent(`${p.marca} ${p.nombre}`.trim());
-    return `https://www.fragrantica.com/search/?query=${q}`;
+  hayNotas(p: Perfume): boolean {
+    return tieneNotas(p);
   }
 
   /** Stock disponible de una línea del carrito (por tamaño de frasco). */

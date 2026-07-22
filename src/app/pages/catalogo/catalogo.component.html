@@ -43,7 +43,12 @@
 } @else {
   <section class="grid">
     @for (p of filtrados(); track p.id) {
-      <app-perfume-card [perfume]="p" (agregar)="agregar($event)" (verNotas)="abrirNotas($event)" />
+      <app-perfume-card
+        [perfume]="p"
+        (agregar)="agregar($event)"
+        (verNotas)="abrirNotas($event)"
+        (verImagen)="abrirImagen($event)"
+      />
     }
   </section>
 }
@@ -136,10 +141,16 @@
         Todavía no hemos cargado las notas de este perfume.
       </p>
     }
+  </div>
+}
 
-    <a class="notas-frag" [href]="fragranticaUrl(p)" target="_blank" rel="noopener">
-      Ver ficha completa en Fragrantica ↗
-    </a>
+<!-- Modal de imagen ampliada -->
+@if (imagenAmpliada(); as p) {
+  <div class="overlay" (click)="imagenAmpliada.set(null)"></div>
+  <div class="img-modal">
+    <button class="img-modal-x" (click)="imagenAmpliada.set(null)">✕</button>
+    <img [src]="p.imagenUrl" [alt]="p.nombre" />
+    <p class="img-modal-tit">{{ p.marca }} — {{ p.nombre }}</p>
   </div>
 }
 
