@@ -80,3 +80,57 @@ create policy "img_public_read" on storage.objects
   for select using (bucket_id = 'perfumes');
 create policy "img_public_upload" on storage.objects
   for insert with check (bucket_id = 'perfumes');
+
+-- ============================================================
+--  Costo de compra, inversión y ventas (control financiero)
+-- ============================================================
+
+-- Costo de compra de referencia (fallback cuando no hay desglose de frascos).
+alter table public.perfumes add column if not exists costo numeric(10,2) not null default 0;
+-- El costo por tamaño vive DENTRO de cada objeto del jsonb `frascos`
+-- como "costo" (ej: {"ml":100,"precio":2900,"stock":10,"costo":1200}).
+
+-- ---------- Tabla de compras (histórico de inversión) ----------
+create table if not exists public.compras (
+  id             uuid primary key default gen_random_uuid(),
+  perfume_id     uuid references public.perfumes(id) on delete set null,
+  perfume_nombre text not null,
+  ml             integer not null default 0, -- 0 = sin desglose de frascos
+  cantidad       integer not null,
+  costo_unitario numeric(10,2) not null default 0,
+  total          numeric(10,2) not null default 0,
+  nota           text default '',
+  created_at     timestamptz not null default now()
+);
+
+-- ---------- Tabla de ventas (histórico de ingresos/ganancia) ----------
+create table if not exists public.ventas (
+  id              uuid primary key default gen_random_uuid(),
+  perfume_id      uuid references public.perfumes(id) on delete set null,
+  perfume_nombre  text not null,
+  presentacion    text not null default '', -- "Frasco 100 ml", "Decant 5 ml"
+  tipo            text not null default 'frasco', -- 'frasco' | 'decant'
+  ml              integer not null default 0,
+  cantidad        integer not null,
+  precio_unitario numeric(10,2) not null default 0,
+  costo_unitario  numeric(10,2) not null default 0,
+  ingreso         numeric(10,2) not null default 0, -- precio_unitario * cantidad
+  costo           numeric(10,2) not null default 0, -- costo_unitario * cantidad
+  ganancia        numeric(10,2) not null default 0, -- ingreso - costo
+  origen          text not null default 'pedido', -- 'pedido' | 'rapida'
+  pedido_id       uuid references public.pedidos(id) on delete set null,
+  cliente_nombre  text default '',
+  nota            text default '',
+  created_at      timestamptz not null default now()
+);
+
+-- RLS: mismo criterio abierto que perfumes/pedidos. Son ledgers de solo
+-- inserción (no hay policy de update/delete): nunca se edita un registro.
+alter table public.compras enable row level security;
+alter table public.ventas  enable row level security;
+
+create policy "compras_select" on public.compras for select using (true);
+create policy "compras_insert" on public.compras for insert with check (true);
+
+create policy "ventas_select" on public.ventas for select using (true);
+create policy "ventas_insert" on public.ventas for insert with check (true);

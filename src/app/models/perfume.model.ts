@@ -3,6 +3,7 @@ export interface FrascoTamano {
   ml: number;
   precio: number;
   stock: number;
+  costo?: number; // costo de compra por unidad de este tamaño
 }
 
 export interface Perfume {
@@ -20,6 +21,7 @@ export interface Perfume {
   notasSalida?: string;
   notasCorazon?: string;
   notasFondo?: string;
+  costo?: number; // costo de compra de referencia (fallback sin desglose de frascos)
   createdAt?: string;
 }
 
@@ -71,6 +73,7 @@ export interface Presentacion {
   costoEnvase: number; // costo del envase vacío
   margen: number; // multiplicador de ganancia aplicado
   ganancia: number; // ganancia neta en dinero
+  costoUnitario: number; // costo de compra real de esta presentación (para venta rápida / finanzas)
 }
 
 const redondear5 = (n: number) => Math.round(n / 5) * 5;
@@ -111,6 +114,7 @@ export function calcularDecant(
     costoEnvase,
     margen,
     ganancia,
+    costoUnitario: 0, // se completa en presentaciones() con el costo real de compra
   };
 }
 
@@ -124,6 +128,7 @@ export function presentaciones(
   const frascos = frascosDe(p, mlDefault);
   const base = frascos[0]; // frasco de referencia para los decants
   const total = frascos.reduce((s, f) => s + (f.stock || 0), 0);
+  const costoBase = base.costo ?? p.costo ?? 0;
   const opciones: Presentacion[] = frascos.map((fr) => ({
     label: `Frasco ${fr.ml} ml`,
     tipo: 'frasco',
@@ -134,12 +139,15 @@ export function presentaciones(
     costoEnvase: 0,
     margen: 1,
     ganancia: 0,
+    costoUnitario: fr.costo ?? p.costo ?? 0,
   }));
   // Los decants solo se ofrecen si hay algún frasco en existencia.
   if (total > 0) {
-    opciones.push(calcularDecant(base.precio, base.ml, 2, costoEnvase));
-    opciones.push(calcularDecant(base.precio, base.ml, 5, costoEnvase));
-    opciones.push(calcularDecant(base.precio, base.ml, 10, costoEnvase));
+    for (const ml of [2, 5, 10]) {
+      const dc = calcularDecant(base.precio, base.ml, ml, costoEnvase);
+      dc.costoUnitario = (costoBase / base.ml) * ml;
+      opciones.push(dc);
+    }
   }
   return opciones;
 }
@@ -165,4 +173,73 @@ export function estadoStock(stock: number): EstadoStock {
   if (stock <= 0) return { tipo: 'agotado' };
   if (stock < 5) return { tipo: 'pocas', cantidad: stock };
   return { tipo: 'disponible' };
+}
+
+// ============================================================
+//  Control financiero: inversión (compras) y ventas
+// ============================================================
+
+/** Registro histórico de una compra de inventario (capital invertido). */
+export interface Compra {
+  id: string;
+  perfumeId: string;
+  perfumeNombre: string;
+  ml: number; // 0 = sin desglose de frascos
+  cantidad: number;
+  costoUnitario: number;
+  total: number;
+  nota: string;
+  createdAt: string;
+}
+
+/** Registro histórico de una venta (pedido web o venta rápida en persona). */
+export interface Venta {
+  id: string;
+  perfumeId: string;
+  perfumeNombre: string;
+  presentacion: string;
+  tipo: 'frasco' | 'decant';
+  ml: number;
+  cantidad: number;
+  precioUnitario: number;
+  costoUnitario: number;
+  ingreso: number;
+  costo: number;
+  ganancia: number;
+  origen: 'pedido' | 'rapida';
+  pedidoId?: string;
+  clienteNombre?: string;
+  nota?: string;
+  createdAt: string;
+}
+
+/** Un incremento de stock detectado al comparar frascos antes/después de guardar. */
+export interface DeltaCompra {
+  ml: number;
+  cantidad: number; // siempre > 0
+  costoUnitario: number;
+}
+
+/**
+ * Compara los frascos ANTES vs DESPUÉS de guardar un perfume y devuelve
+ * solo los incrementos de stock (compras). Ignora decrementos (son ventas,
+ * manejadas aparte) y ediciones de otros campos.
+ * - Frascos nuevos (ml que no existía antes) cuentan como compra por su stock total.
+ * - Frascos existentes: delta = max(0, stockDespues - stockAntes).
+ * - El costo unitario usado es el declarado en el frasco DESPUÉS de guardar.
+ */
+export function diffFrascosParaCompra(
+  antes: FrascoTamano[] | undefined,
+  despues: FrascoTamano[] | undefined
+): DeltaCompra[] {
+  const mapaAntes = new Map((antes ?? []).map((f) => [f.ml, f]));
+  const deltas: DeltaCompra[] = [];
+  for (const fr of despues ?? []) {
+    const stockAntes = mapaAntes.get(fr.ml)?.stock ?? 0;
+    const cantidad = (fr.stock || 0) - stockAntes;
+    if (cantidad > 0) {
+      deltas.push({ ml: fr.ml, cantidad, costoUnitario: fr.costo ?? 0 });
+    }
+  }
+  return deltas;
 }

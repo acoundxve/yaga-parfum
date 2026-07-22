@@ -23,6 +23,8 @@
     <button [class.on]="tab() === 'pedidos'" (click)="tab.set('pedidos')">
       Pedidos @if (pedidosNuevos() > 0) { <em class="dot">{{ pedidosNuevos() }}</em> }
     </button>
+    <button [class.on]="tab() === 'finanzas'" (click)="tab.set('finanzas')">Finanzas</button>
+    <button [class.on]="tab() === 'venta-rapida'" (click)="tab.set('venta-rapida')">Venta rápida</button>
   </div>
 
   <!-- ============ INVENTARIO ============ -->
@@ -138,6 +140,99 @@
       </div>
     }
   }
+
+  <!-- ============ FINANZAS ============ -->
+  @if (tab() === 'finanzas') {
+    <div class="cards-kpi">
+      <div class="kpi"><span>{{ moneda }} {{ capitalInvertido() | number: '1.0-0' }}</span><small>Capital invertido</small></div>
+      <div class="kpi info"><span>{{ moneda }} {{ ingresosVentas() | number: '1.0-0' }}</span><small>Ingresos por ventas</small></div>
+      <div class="kpi warn"><span>{{ moneda }} {{ costoVendido() | number: '1.0-0' }}</span><small>Costo de lo vendido</small></div>
+      <div class="kpi"><span>{{ moneda }} {{ gananciaNeta() | number: '1.0-0' }}</span><small>Ganancia neta</small></div>
+      <div class="kpi" [class.danger]="porcentajeRecuperado() < 50"><span>{{ porcentajeRecuperado() }}%</span><small>Recuperado de la inversión</small></div>
+    </div>
+
+    <div class="tabla">
+      <div class="tr th">
+        <span>Fecha</span><span>Perfume</span><span>Presentación</span><span>Cant.</span><span>Ingreso</span><span>Ganancia</span>
+      </div>
+      @for (v of ventasRecientes(); track v.id) {
+        <div class="tr">
+          <span>{{ v.createdAt | date: 'short' }}</span>
+          <span>{{ v.perfumeNombre }}</span>
+          <span>{{ v.presentacion }} <small class="pres-mini">{{ v.origen === 'rapida' ? 'Venta rápida' : 'Pedido web' }}</small></span>
+          <span>{{ v.cantidad }}</span>
+          <span>{{ moneda }} {{ v.ingreso | number: '1.0-0' }}</span>
+          <span>{{ moneda }} {{ v.ganancia | number: '1.0-0' }}</span>
+        </div>
+      } @empty {
+        <p class="aviso">Aún no hay ventas registradas.</p>
+      }
+    </div>
+  }
+
+  <!-- ============ VENTA RÁPIDA ============ -->
+  @if (tab() === 'venta-rapida') {
+    <div class="frascos-box">
+      <div class="campos">
+        <label>Perfume
+          <select [ngModel]="vrPerfumeId()" (ngModelChange)="vrPerfumeId.set($event); vrElegirPresentacion(null)">
+            <option value="">Selecciona…</option>
+            @for (p of perfumes(); track p.id) {
+              <option [value]="p.id">{{ p.marca }} — {{ p.nombre }}</option>
+            }
+          </select>
+        </label>
+        @if (vrPerfumeId()) {
+          <label>Presentación
+            <select [ngModel]="vrPresentacion()" (ngModelChange)="vrElegirPresentacion($event)">
+              <option [ngValue]="null">Selecciona…</option>
+              @for (pres of vrPresentaciones(); track pres.label) {
+                <option [ngValue]="pres" [disabled]="pres.tipo === 'frasco' && pres.stock <= 0">
+                  {{ pres.label }} — {{ moneda }} {{ pres.precio | number: '1.0-0' }} ({{ pres.tipo === 'frasco' ? pres.stock + ' disp.' : 'ilimitado' }})
+                </option>
+              }
+            </select>
+          </label>
+        }
+        <div class="dos">
+          <label>Cantidad
+            <input type="number" min="1" [ngModel]="vrCantidad()" (ngModelChange)="vrCantidad.set($event)" />
+          </label>
+          <label>Precio unitario ({{ moneda }})
+            <input type="number" min="0" [ngModel]="vrPrecio()" (ngModelChange)="vrPrecio.set($event)" />
+          </label>
+        </div>
+        <label>Cliente (opcional)
+          <input [ngModel]="vrCliente()" (ngModelChange)="vrCliente.set($event)" placeholder="Nombre del cliente" />
+        </label>
+        <label>Nota (opcional)
+          <input [ngModel]="vrNota()" (ngModelChange)="vrNota.set($event)" />
+        </label>
+        <button class="btn" [disabled]="vrGuardando() || !vrPresentacion()" (click)="confirmarVentaRapida()">
+          {{ vrGuardando() ? 'Guardando…' : 'Registrar venta' }}
+        </button>
+        @if (vrMsg()) { <p class="aviso">{{ vrMsg() }}</p> }
+      </div>
+    </div>
+
+    <div class="tabla" style="margin-top: 20px">
+      <div class="tr th">
+        <span>Fecha</span><span>Perfume</span><span>Presentación</span><span>Cant.</span><span>Total</span><span>Cliente</span>
+      </div>
+      @for (v of ventasRapidasRecientes(); track v.id) {
+        <div class="tr">
+          <span>{{ v.createdAt | date: 'short' }}</span>
+          <span>{{ v.perfumeNombre }}</span>
+          <span>{{ v.presentacion }}</span>
+          <span>{{ v.cantidad }}</span>
+          <span>{{ moneda }} {{ v.ingreso | number: '1.0-0' }}</span>
+          <span>{{ v.clienteNombre || '—' }}</span>
+        </div>
+      } @empty {
+        <p class="aviso">Aún no hay ventas rápidas.</p>
+      }
+    </div>
+  }
 </section>
 
 <!-- ============ MODAL EDITAR / NUEVO ============ -->
@@ -184,17 +279,18 @@
             <button type="button" class="mini-btn" (click)="agregarFrasco()">+ Agregar tamaño</button>
           </div>
           <div class="frasco-row frasco-th">
-            <span>ml</span><span>precio ({{ moneda }})</span><span>stock</span><span></span>
+            <span>ml</span><span>precio ({{ moneda }})</span><span>stock</span><span>costo ({{ moneda }})</span><span></span>
           </div>
           @for (fr of (p.frascos ?? []); track $index) {
             <div class="frasco-row">
               <input type="number" min="0" placeholder="ml" [(ngModel)]="fr.ml" [ngModelOptions]="{ standalone: true }" />
               <input type="number" min="0" placeholder="precio" [(ngModel)]="fr.precio" [ngModelOptions]="{ standalone: true }" />
               <input type="number" min="0" placeholder="stock" [(ngModel)]="fr.stock" [ngModelOptions]="{ standalone: true }" />
+              <input type="number" min="0" placeholder="costo" [(ngModel)]="fr.costo" [ngModelOptions]="{ standalone: true }" />
               <button type="button" class="fr-del" (click)="quitarFrasco($index)">🗑</button>
             </div>
           }
-          <p class="frascos-nota">Ej: 60, 100, 120, 200 ml. Cada tamaño con su precio y su stock. Deja en 0 el tamaño agotado.</p>
+          <p class="frascos-nota">Ej: 60, 100, 120, 200 ml. Cada tamaño con su precio, su stock y lo que te costó comprarlo. Deja en 0 el tamaño agotado.</p>
         </div>
 
         <label>Descripción

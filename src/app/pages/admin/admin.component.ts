@@ -20,10 +20,11 @@ function vacio(): Perfume {
     stock: 0,
     categoria: 'Unisex',
     imagenUrl: '',
-    frascos: [{ ml: 100, precio: 0, stock: 0 }],
+    frascos: [{ ml: 100, precio: 0, stock: 0, costo: 0 }],
     notasSalida: '',
     notasCorazon: '',
     notasFondo: '',
+    costo: 0,
   };
 }
 
@@ -39,9 +40,11 @@ export class AdminComponent implements OnInit {
   moneda = environment.moneda;
   perfumes = this.data.perfumes;
   pedidos = this.data.pedidos;
+  compras = this.data.compras;
+  ventas = this.data.ventas;
   usaSupabase = this.data.usaSupabase;
 
-  tab = signal<'inventario' | 'pedidos'>('inventario');
+  tab = signal<'inventario' | 'pedidos' | 'finanzas' | 'venta-rapida'>('inventario');
   buscarInv = signal('');
   ordenInv = signal<'reciente' | 'az' | 'za' | 'precio-asc' | 'precio-desc' | 'stock-asc' | 'stock-desc'>('reciente');
   editando = signal<Perfume | null>(null);
@@ -62,6 +65,35 @@ export class AdminComponent implements OnInit {
   pedidosNuevos = computed(() =>
     this.pedidos().filter((p) => p.estado === 'nuevo').length
   );
+
+  // ---------- Finanzas ----------
+  capitalInvertido = computed(() => this.compras().reduce((s, c) => s + c.total, 0));
+  ingresosVentas = computed(() => this.ventas().reduce((s, v) => s + v.ingreso, 0));
+  costoVendido = computed(() => this.ventas().reduce((s, v) => s + v.costo, 0));
+  gananciaNeta = computed(() => this.ingresosVentas() - this.costoVendido());
+  porcentajeRecuperado = computed(() => {
+    const inv = this.capitalInvertido();
+    return inv > 0 ? Math.min(100, Math.round((this.costoVendido() / inv) * 100)) : 0;
+  });
+  ventasRecientes = computed(() => this.ventas().slice(0, 20));
+  ventasRapidasRecientes = computed(() =>
+    this.ventas().filter((v) => v.origen === 'rapida').slice(0, 20)
+  );
+
+  // ---------- Venta rápida ----------
+  vrPerfumeId = signal('');
+  vrPresentacion = signal<Presentacion | null>(null);
+  vrCantidad = signal(1);
+  vrPrecio = signal(0);
+  vrCliente = signal('');
+  vrNota = signal('');
+  vrGuardando = signal(false);
+  vrMsg = signal('');
+
+  vrPresentaciones = computed(() => {
+    const p = this.perfumes().find((x) => x.id === this.vrPerfumeId());
+    return p ? presentaciones(p, this.mlFrasco, this.costoEnvase) : [];
+  });
 
   /** Inventario filtrado por búsqueda y ordenado según la opción elegida. */
   perfumesFiltrados = computed(() => {
@@ -105,7 +137,7 @@ export class AdminComponent implements OnInit {
   agregarFrasco() {
     const p = this.editando();
     if (!p) return;
-    const frascos = [...(p.frascos ?? []), { ml: 0, precio: 0, stock: 0 }];
+    const frascos = [...(p.frascos ?? []), { ml: 0, precio: 0, stock: 0, costo: 0 }];
     this.editando.set({ ...p, frascos });
   }
 
@@ -115,12 +147,17 @@ export class AdminComponent implements OnInit {
     const frascos = (p.frascos ?? []).filter((_, idx) => idx !== i);
     this.editando.set({
       ...p,
-      frascos: frascos.length ? frascos : [{ ml: 100, precio: 0, stock: 0 }],
+      frascos: frascos.length ? frascos : [{ ml: 100, precio: 0, stock: 0, costo: 0 }],
     });
   }
 
   async ngOnInit() {
-    await Promise.all([this.data.cargarPerfumes(), this.data.cargarPedidos()]);
+    await Promise.all([
+      this.data.cargarPerfumes(),
+      this.data.cargarPedidos(),
+      this.data.cargarCompras(),
+      this.data.cargarVentas(),
+    ]);
   }
 
   nuevo() {
@@ -130,8 +167,8 @@ export class AdminComponent implements OnInit {
   editar(p: Perfume) {
     const frascos =
       p.frascos && p.frascos.length
-        ? p.frascos.map((f) => ({ ml: f.ml, precio: f.precio, stock: f.stock ?? 0 }))
-        : [{ ml: 100, precio: p.precio || 0, stock: p.stock || 0 }];
+        ? p.frascos.map((f) => ({ ml: f.ml, precio: f.precio, stock: f.stock ?? 0, costo: f.costo ?? 0 }))
+        : [{ ml: 100, precio: p.precio || 0, stock: p.stock || 0, costo: p.costo || 0 }];
     this.editando.set({ ...p, frascos });
   }
 
@@ -169,6 +206,7 @@ export class AdminComponent implements OnInit {
         ml: Number(f.ml) || 0,
         precio: Number(f.precio) || 0,
         stock: Number(f.stock) || 0,
+        costo: Number(f.costo) || 0,
       }))
       .filter((f) => f.ml > 0 && f.precio > 0);
     const precioRef = frascos.length
@@ -177,11 +215,14 @@ export class AdminComponent implements OnInit {
     const stockRef = frascos.length
       ? frascos.reduce((s, f) => s + f.stock, 0)
       : p.stock;
-    const limpio = { ...p, frascos, precio: precioRef, stock: stockRef };
+    const costoRef = frascos.length
+      ? Math.min(...frascos.map((f) => f.costo))
+      : p.costo ?? 0;
+    const limpio = { ...p, frascos, precio: precioRef, stock: stockRef, costo: costoRef };
 
     this.guardando.set(true);
     try {
-      await this.data.guardarPerfume(limpio);
+      await this.data.guardarPerfumeConCompra(limpio);
       this.editando.set(null);
     } catch (e) {
       console.error(e);
@@ -208,14 +249,50 @@ export class AdminComponent implements OnInit {
       const copia = frascos.map((f) => ({ ...f }));
       copia[0].stock = Math.max(0, (copia[0].stock || 0) + delta);
       const stock = copia.reduce((s, f) => s + (f.stock || 0), 0);
-      await this.data.guardarPerfume({ ...p, frascos: copia, stock });
+      await this.data.guardarPerfumeConCompra({ ...p, frascos: copia, stock });
     } else {
-      await this.data.guardarPerfume({ ...p, stock: Math.max(0, p.stock + delta) });
+      await this.data.guardarPerfumeConCompra({ ...p, stock: Math.max(0, p.stock + delta) });
     }
   }
 
   async cambiarEstadoPedido(id: string, estado: 'nuevo' | 'atendido' | 'entregado') {
     await this.data.actualizarEstadoPedido(id, estado);
+  }
+
+  vrElegirPresentacion(pres: Presentacion | null) {
+    this.vrPresentacion.set(pres);
+    this.vrPrecio.set(pres?.precio ?? 0);
+  }
+
+  async confirmarVentaRapida() {
+    const pres = this.vrPresentacion();
+    if (!this.vrPerfumeId() || !pres || this.vrCantidad() <= 0) {
+      alert('Completa perfume, presentación y cantidad.');
+      return;
+    }
+    this.vrGuardando.set(true);
+    this.vrMsg.set('');
+    try {
+      await this.data.venderRapido({
+        perfumeId: this.vrPerfumeId(),
+        presentacion: pres,
+        cantidad: this.vrCantidad(),
+        precioUnitario: this.vrPrecio(),
+        clienteNombre: this.vrCliente(),
+        nota: this.vrNota(),
+      });
+      this.vrMsg.set('✅ Venta registrada.');
+      this.vrPerfumeId.set('');
+      this.vrPresentacion.set(null);
+      this.vrCantidad.set(1);
+      this.vrPrecio.set(0);
+      this.vrCliente.set('');
+      this.vrNota.set('');
+    } catch (e: any) {
+      alert(e?.message ?? 'No se pudo registrar la venta.');
+    } finally {
+      this.vrGuardando.set(false);
+    }
   }
 
   get puedeImportar(): boolean {
