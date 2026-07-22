@@ -610,6 +610,7 @@ function fromRow(r: any): Perfume {
     notasCorazon: r.notas_corazon ?? '',
     notasFondo: r.notas_fondo ?? '',
     costo: Number(r.costo ?? 0),
+    permiteDecants: r.permite_decants ?? true,
     createdAt: r.created_at,
   };
 }
@@ -629,6 +630,7 @@ function toRow(p: Perfume): Record<string, unknown> {
     notas_corazon: p.notasCorazon ?? '',
     notas_fondo: p.notasFondo ?? '',
     costo: p.costo ?? 0,
+    permite_decants: p.permiteDecants ?? true,
   };
 }
 

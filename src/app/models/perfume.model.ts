@@ -22,6 +22,7 @@ export interface Perfume {
   notasCorazon?: string;
   notasFondo?: string;
   costo?: number; // costo de compra de referencia (fallback sin desglose de frascos)
+  permiteDecants?: boolean; // false para colonias, cremas, etc. que no se venden en muestras
   createdAt?: string;
 }
 
@@ -141,8 +142,9 @@ export function presentaciones(
     ganancia: 0,
     costoUnitario: fr.costo ?? p.costo ?? 0,
   }));
-  // Los decants solo se ofrecen si hay algún frasco en existencia.
-  if (total > 0) {
+  // Los decants solo se ofrecen si hay algún frasco en existencia y el
+  // producto los permite (colonias, cremas, etc. se venden solo completos).
+  if (total > 0 && p.permiteDecants !== false) {
     for (const ml of [2, 5, 10]) {
       const dc = calcularDecant(base.precio, base.ml, ml, costoEnvase);
       dc.costoUnitario = (costoBase / base.ml) * ml;

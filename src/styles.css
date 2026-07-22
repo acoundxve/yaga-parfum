@@ -497,6 +497,8 @@ em { font-style: normal; }
 .dc-precio { color: var(--gold); font-weight: 700; }
 .dc-gan { color: var(--ok); font-weight: 600; }
 .decant-nota { font-size: 11px; color: var(--txt-dim); margin: 8px 0 0; }
+.chk-decants { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--txt-dim); }
+.chk-decants input { width: auto; }
 
 @media (max-width: 760px) {
   .tabla { overflow-x: auto; }

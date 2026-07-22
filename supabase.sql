@@ -134,3 +134,9 @@ create policy "compras_insert" on public.compras for insert with check (true);
 
 create policy "ventas_select" on public.ventas for select using (true);
 create policy "ventas_insert" on public.ventas for insert with check (true);
+
+-- ============================================================
+--  Permitir desactivar decants por producto (colonias, cremas, etc.
+--  que no tiene sentido vender en muestras de 2/5/10 ml)
+-- ============================================================
+alter table public.perfumes add column if not exists permite_decants boolean not null default true;

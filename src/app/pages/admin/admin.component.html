@@ -368,23 +368,34 @@
           <input [(ngModel)]="p.notasFondo" placeholder="Vainilla, oud, ámbar, tonka…" />
         </label>
 
-        <div class="decant-box">
-          <div class="decant-head">
-            <span>Decants (calculados desde el frasco base · envase {{ moneda }} {{ costoEnvase }})</span>
-          </div>
-          <div class="decant-tr decant-th">
-            <span>Tamaño</span><span>Precio venta</span><span>Costo líquido</span><span>Ganancia</span>
-          </div>
-          @for (dc of decants(p); track dc.ml) {
-            <div class="decant-tr">
-              <span>{{ dc.ml }} ml</span>
-              <span class="dc-precio">{{ moneda }} {{ dc.precio | number: '1.0-0' }}</span>
-              <span>{{ moneda }} {{ dc.costoLiquido | number: '1.0-0' }}</span>
-              <span class="dc-gan">+{{ moneda }} {{ dc.ganancia | number: '1.0-0' }}</span>
+        <label class="chk-decants">
+          <input
+            type="checkbox"
+            [ngModel]="p.permiteDecants !== false"
+            (ngModelChange)="p.permiteDecants = $event"
+          />
+          Vender también por decants (muestras). Desactívalo para colonias, cremas u otros productos que solo se venden completos.
+        </label>
+
+        @if (p.permiteDecants !== false) {
+          <div class="decant-box">
+            <div class="decant-head">
+              <span>Decants (calculados desde el frasco base · envase {{ moneda }} {{ costoEnvase }})</span>
             </div>
-          }
-          <p class="decant-nota">La ganancia ya descuenta líquido y envase. Cambia la capacidad o el costo del envase en environment.ts.</p>
-        </div>
+            <div class="decant-tr decant-th">
+              <span>Tamaño</span><span>Precio venta</span><span>Costo líquido</span><span>Ganancia</span>
+            </div>
+            @for (dc of decants(p); track dc.ml) {
+              <div class="decant-tr">
+                <span>{{ dc.ml }} ml</span>
+                <span class="dc-precio">{{ moneda }} {{ dc.precio | number: '1.0-0' }}</span>
+                <span>{{ moneda }} {{ dc.costoLiquido | number: '1.0-0' }}</span>
+                <span class="dc-gan">+{{ moneda }} {{ dc.ganancia | number: '1.0-0' }}</span>
+              </div>
+            }
+            <p class="decant-nota">La ganancia ya descuenta líquido y envase. Cambia la capacidad o el costo del envase en environment.ts.</p>
+          </div>
+        }
       </div>
     </div>
 
