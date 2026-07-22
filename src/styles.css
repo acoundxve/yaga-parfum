@@ -12,6 +12,8 @@
   --txt-dim: #a7a3b0;
   --gold: #d9b06a;
   --gold-2: #f0d69a;
+  --celeste: #4fc3f7;
+  --celeste-2: #a8e2ff;
   --danger: #ff5a5a;
   --warn: #ffb454;
   --ok: #57d08a;
@@ -126,8 +128,8 @@ em { font-style: normal; }
   border: none; cursor: pointer;
   padding: 11px 20px; border-radius: 999px;
   font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
-  color: #10100c;
-  background: linear-gradient(135deg, var(--gold-2), var(--gold));
+  color: #062330;
+  background: linear-gradient(135deg, var(--celeste-2), var(--celeste));
   transition: 0.2s; white-space: nowrap;
 }
 .btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
@@ -171,7 +173,7 @@ em { font-style: normal; }
   color: var(--txt-dim); font-size: 13px; transition: 0.2s;
 }
 .chip:hover { color: var(--txt); }
-.chip.on { background: var(--gold); color: #10100c; border-color: var(--gold); font-weight: 600; }
+.chip.on { background: var(--celeste); color: #062330; border-color: var(--celeste); font-weight: 600; }
 
 .aviso { color: var(--txt-dim); text-align: center; padding: 60px 0; }
 
