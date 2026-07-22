@@ -264,7 +264,8 @@ export class PerfumeService {
     return (costoBase / base.ml) * item.ml;
   }
 
-  /** Venta directa en persona ("venta rápida"): descuenta stock (si es frasco) y registra la venta. */
+  /** Venta directa en persona ("venta rápida"): descuenta stock (si es frasco) y registra la venta.
+   *  Devuelve la venta creada (con su id y fecha reales) para poder generar la factura. */
   async venderRapido(input: {
     perfumeId: string;
     presentacion: Presentacion;
@@ -272,7 +273,7 @@ export class PerfumeService {
     precioUnitario: number;
     clienteNombre?: string;
     nota?: string;
-  }): Promise<void> {
+  }): Promise<Venta> {
     const p = this.perfumes().find((x) => x.id === input.perfumeId);
     if (!p) throw new Error('Perfume no encontrado.');
     const { presentacion: pres, cantidad } = input;
@@ -295,7 +296,7 @@ export class PerfumeService {
     }
     // Los decants no se limitan por unidades (igual que en el catálogo).
 
-    await this.registrarVenta({
+    return this.registrarVenta({
       perfumeId: p.id,
       perfumeNombre: p.nombre,
       presentacion: pres.label,
@@ -520,8 +521,17 @@ export class PerfumeService {
     }
   }
 
-  /** Registra una venta (ingreso/ganancia). Nunca lanza. */
-  private async registrarVenta(v: Omit<Venta, 'id' | 'createdAt'>): Promise<void> {
+  /** Registra una venta (ingreso/ganancia) y devuelve la venta guardada (con
+   *  id y fecha reales, útiles para la factura). El registro del ledger
+   *  nunca lanza: si falla (p.ej. la tabla `ventas` aún no existe), se
+   *  devuelve igual un objeto con id/fecha generados localmente, para no
+   *  bloquear la venta ya realizada ni la factura del cliente. */
+  private async registrarVenta(v: Omit<Venta, 'id' | 'createdAt'>): Promise<Venta> {
+    const respaldo: Venta = {
+      ...v,
+      id: 'local-' + Date.now() + Math.random(),
+      createdAt: new Date().toISOString(),
+    };
     try {
       if (this.usaSupabase) {
         const row = {
@@ -541,17 +551,19 @@ export class PerfumeService {
           cliente_nombre: v.clienteNombre ?? '',
           nota: v.nota ?? '',
         };
-        const { error } = await this.sb.client!.from('ventas').insert(row);
+        const { data, error } = await this.sb.client!.from('ventas').insert(row).select().single();
         if (error) throw error;
         await this.cargarVentas();
+        return data ? fromRowVenta(data) : respaldo;
       } else {
-        const nueva: Venta = { ...v, id: 'local-' + Date.now() + Math.random(), createdAt: new Date().toISOString() };
-        const lista = [nueva, ...this.ventas()];
+        const lista = [respaldo, ...this.ventas()];
         this.ventas.set(lista);
         this.guardarLocal(LS_VENTAS, lista);
+        return respaldo;
       }
     } catch (e) {
       console.error('No se pudo registrar la venta:', e);
+      return respaldo;
     }
   }
 

@@ -447,6 +447,12 @@ em { font-style: normal; }
 .frasco-th { color: var(--txt-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
 .fr-del { background: none; border: none; cursor: pointer; font-size: 15px; opacity: 0.7; }
 .frascos-nota { font-size: 11px; color: var(--txt-dim); margin: 4px 0 0; }
+
+.vr-resultados { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; max-height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; padding: 6px; background: var(--panel); }
+.vr-resultado { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: none; border-radius: 8px; background: transparent; color: var(--txt); text-align: left; cursor: pointer; font-size: 14px; }
+.vr-resultado:hover { background: var(--bg-2); }
+.vr-seleccionado { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.vr-seleccionado span:nth-child(2) { flex: 1; }
 .desde { font-size: 11px; color: var(--txt-dim); font-weight: 400; }
 
 .decant-box { margin-top: 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }

@@ -9,6 +9,7 @@ import {
   presentaciones,
 } from '../../models/perfume.model';
 import { environment } from '../../../environments/environment';
+import { generarFacturaPdf } from '../../utils/factura-pdf';
 
 function vacio(): Perfume {
   return {
@@ -82,6 +83,7 @@ export class AdminComponent implements OnInit {
 
   // ---------- Venta rápida ----------
   vrPerfumeId = signal('');
+  vrBusqueda = signal('');
   vrPresentacion = signal<Presentacion | null>(null);
   vrCantidad = signal(1);
   vrPrecio = signal(0);
@@ -90,8 +92,21 @@ export class AdminComponent implements OnInit {
   vrGuardando = signal(false);
   vrMsg = signal('');
 
+  vrPerfumeSeleccionado = computed(
+    () => this.perfumes().find((x) => x.id === this.vrPerfumeId()) ?? null
+  );
+
+  /** Resultados del buscador de perfumes (como en el catálogo), solo mientras no haya uno elegido. */
+  vrResultados = computed(() => {
+    const q = this.vrBusqueda().toLowerCase().trim();
+    if (!q) return [];
+    return this.perfumes()
+      .filter((p) => `${p.marca} ${p.nombre}`.toLowerCase().includes(q))
+      .slice(0, 8);
+  });
+
   vrPresentaciones = computed(() => {
-    const p = this.perfumes().find((x) => x.id === this.vrPerfumeId());
+    const p = this.vrPerfumeSeleccionado();
     return p ? presentaciones(p, this.mlFrasco, this.costoEnvase) : [];
   });
 
@@ -259,6 +274,17 @@ export class AdminComponent implements OnInit {
     await this.data.actualizarEstadoPedido(id, estado);
   }
 
+  vrSeleccionarPerfume(p: Perfume) {
+    this.vrPerfumeId.set(p.id);
+    this.vrBusqueda.set('');
+    this.vrElegirPresentacion(null);
+  }
+
+  vrCambiarPerfume() {
+    this.vrPerfumeId.set('');
+    this.vrElegirPresentacion(null);
+  }
+
   vrElegirPresentacion(pres: Presentacion | null) {
     this.vrPresentacion.set(pres);
     this.vrPrecio.set(pres?.precio ?? 0);
@@ -273,7 +299,7 @@ export class AdminComponent implements OnInit {
     this.vrGuardando.set(true);
     this.vrMsg.set('');
     try {
-      await this.data.venderRapido({
+      const venta = await this.data.venderRapido({
         perfumeId: this.vrPerfumeId(),
         presentacion: pres,
         cantidad: this.vrCantidad(),
@@ -281,8 +307,19 @@ export class AdminComponent implements OnInit {
         clienteNombre: this.vrCliente(),
         nota: this.vrNota(),
       });
-      this.vrMsg.set('✅ Venta registrada.');
+      this.vrMsg.set('✅ Venta registrada. Generando factura…');
+      try {
+        await generarFacturaPdf(venta, {
+          nombre: environment.nombreNegocio,
+          moneda: this.moneda,
+        });
+        this.vrMsg.set('✅ Venta registrada y factura descargada.');
+      } catch (e) {
+        console.error('No se pudo generar la factura:', e);
+        this.vrMsg.set('✅ Venta registrada (no se pudo generar la factura).');
+      }
       this.vrPerfumeId.set('');
+      this.vrBusqueda.set('');
       this.vrPresentacion.set(null);
       this.vrCantidad.set(1);
       this.vrPrecio.set(0);

@@ -175,12 +175,38 @@
     <div class="frascos-box">
       <div class="campos">
         <label>Perfume
-          <select [ngModel]="vrPerfumeId()" (ngModelChange)="vrPerfumeId.set($event); vrElegirPresentacion(null)">
-            <option value="">Selecciona…</option>
-            @for (p of perfumes(); track p.id) {
-              <option [value]="p.id">{{ p.marca }} — {{ p.nombre }}</option>
+          @if (!vrPerfumeSeleccionado()) {
+            <input
+              type="search"
+              placeholder="Buscar por nombre o marca…"
+              [ngModel]="vrBusqueda()"
+              (ngModelChange)="vrBusqueda.set($event)"
+            />
+            @if (vrBusqueda().trim()) {
+              <div class="vr-resultados">
+                @for (p of vrResultados(); track p.id) {
+                  <button type="button" class="vr-resultado" (click)="vrSeleccionarPerfume(p)">
+                    <span class="mini">
+                      @if (p.imagenUrl) { <img [src]="p.imagenUrl" [alt]="p.nombre" /> } @else { 🧴 }
+                    </span>
+                    <span>{{ p.marca }} — {{ p.nombre }}</span>
+                  </button>
+                } @empty {
+                  <p class="aviso">Sin resultados.</p>
+                }
+              </div>
             }
-          </select>
+          } @else {
+            <div class="vr-seleccionado">
+              <span class="mini">
+                @if (vrPerfumeSeleccionado()?.imagenUrl) {
+                  <img [src]="vrPerfumeSeleccionado()?.imagenUrl" [alt]="vrPerfumeSeleccionado()?.nombre" />
+                } @else { 🧴 }
+              </span>
+              <span>{{ vrPerfumeSeleccionado()?.marca }} — {{ vrPerfumeSeleccionado()?.nombre }}</span>
+              <button type="button" class="mini-btn" (click)="vrCambiarPerfume()">Cambiar</button>
+            </div>
+          }
         </label>
         @if (vrPerfumeId()) {
           <label>Presentación
