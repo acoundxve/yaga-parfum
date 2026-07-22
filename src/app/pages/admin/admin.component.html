@@ -93,9 +93,9 @@
           </span>
           <span>
             @switch (est(p.stock).tipo) {
-              @case ('agotado') { <em class="badge b-agotado">Agotado</em> }
-              @case ('pocas') { <em class="badge b-pocas">Quedan {{ p.stock }}</em> }
-              @default { <em class="badge b-ok">Disponible</em> }
+              @case ('agotado') { <em class="badge-pill b-agotado">Agotado</em> }
+              @case ('pocas') { <em class="badge-pill b-pocas">Quedan {{ p.stock }}</em> }
+              @default { <em class="badge-pill b-ok">Disponible</em> }
             }
           </span>
           <span class="td-acciones">
@@ -141,7 +141,7 @@
             >❌ Rechazado</button>
           </div>
         } @else {
-          <em class="pedido-badge" [class.b-ok]="ped.estado === 'enviado'" [class.b-agotado]="ped.estado === 'rechazado'">
+          <em class="badge-pill" [class.b-ok]="ped.estado === 'enviado'" [class.b-agotado]="ped.estado === 'rechazado'">
             {{ ped.estado === 'enviado' ? 'Enviado' : ped.estado === 'rechazado' ? 'Rechazado' : ped.estado }}
           </em>
         }

@@ -436,9 +436,10 @@ em { font-style: normal; }
 .mini-btn.ok:hover { border-color: var(--ok); color: var(--ok); }
 .mini-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .pedido-acciones { display: flex; gap: 8px; }
-.pedido-badge { padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; background: var(--bg-2); color: var(--txt-dim); }
-.pedido-badge.b-ok { background: rgba(87,208,138,0.18); color: var(--ok); }
-.pedido-badge.b-agotado { background: var(--danger); color: #2a0000; }
+.badge-pill { padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; background: var(--bg-2); color: var(--txt-dim); white-space: nowrap; }
+.badge-pill.b-ok { background: rgba(87,208,138,0.18); color: var(--ok); }
+.badge-pill.b-agotado { background: var(--danger); color: #2a0000; }
+.badge-pill.b-pocas { background: rgba(255,180,84,0.18); color: var(--warn); }
 
 /* pedidos */
 .pedidos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
