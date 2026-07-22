@@ -72,34 +72,46 @@
       <button class="x" (click)="perfumeElegir.set(null)">✕</button>
     </header>
 
-    <p class="pres-sub">Frasco completo:</p>
-    <div class="pres-lista">
-      @for (op of frascosDe(p); track op.ml) {
-        <button class="pres-op" [disabled]="op.stock <= 0" (click)="elegirPresentacion(p, op)">
-          <span class="pres-nom">
-            {{ op.label }}
-            @if (op.stock <= 0) { <em class="pres-tag off">Agotado</em> }
-            @else if (op.stock < 5) { <em class="pres-tag pocas">Quedan {{ op.stock }}</em> }
-            @else { <em class="pres-tag">Original</em> }
-          </span>
-          <span class="pres-precio">{{ moneda }} {{ op.precio | number: '1.0-0' }}</span>
-        </button>
-      }
-    </div>
+    <div class="pres-body">
+      <div class="pres-img">
+        @if (p.imagenUrl) {
+          <img [src]="p.imagenUrl" [alt]="p.nombre" />
+        } @else {
+          <div class="pres-img-ph"><span>🧴</span><small>Sin imagen</small></div>
+        }
+      </div>
 
-    <p class="pres-sub">Decants (muestras):</p>
-    <div class="pres-lista">
-      @for (op of decantsDe(p); track op.ml) {
-        <button class="pres-op" (click)="elegirPresentacion(p, op)">
-          <span class="pres-nom">
-            {{ op.label }}
-            <em class="pres-tag">muestra</em>
-          </span>
-          <span class="pres-precio">{{ moneda }} {{ op.precio | number: '1.0-0' }}</span>
-        </button>
-      }
+      <div class="pres-listas">
+        <p class="pres-sub">Frasco completo:</p>
+        <div class="pres-lista">
+          @for (op of frascosDe(p); track op.ml) {
+            <button class="pres-op" [disabled]="op.stock <= 0" (click)="elegirPresentacion(p, op)">
+              <span class="pres-nom">
+                {{ op.label }}
+                @if (op.stock <= 0) { <em class="pres-tag off">Agotado</em> }
+                @else if (op.stock < 5) { <em class="pres-tag pocas">Quedan {{ op.stock }}</em> }
+                @else { <em class="pres-tag">Original</em> }
+              </span>
+              <span class="pres-precio">{{ moneda }} {{ op.precio | number: '1.0-0' }}</span>
+            </button>
+          }
+        </div>
+
+        <p class="pres-sub">Decants (muestras):</p>
+        <div class="pres-lista">
+          @for (op of decantsDe(p); track op.ml) {
+            <button class="pres-op" (click)="elegirPresentacion(p, op)">
+              <span class="pres-nom">
+                {{ op.label }}
+                <em class="pres-tag">muestra</em>
+              </span>
+              <span class="pres-precio">{{ moneda }} {{ op.precio | number: '1.0-0' }}</span>
+            </button>
+          }
+        </div>
+        <p class="pres-nota">Los decants son muestras del perfume original en frascos pequeños.</p>
+      </div>
     </div>
-    <p class="pres-nota">Los decants son muestras del perfume original en frascos pequeños.</p>
   </div>
 }
 
