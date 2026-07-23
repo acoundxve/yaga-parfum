@@ -28,6 +28,8 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100%;
+  overflow-x: hidden; /* nunca dejar que un elemento ancho fuerce scroll horizontal de toda la pagina */
+  max-width: 100vw;
 }
 
 body {
@@ -395,10 +397,14 @@ em { font-style: normal; }
 .kpi.danger span { color: var(--danger); }
 .kpi.info span { color: var(--gold); }
 
-.tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
+.tabs {
+  display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--line);
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
 .tabs button {
-  background: none; border: none; cursor: pointer;
-  color: var(--txt-dim); font-size: 15px; padding: 12px 18px;
+  background: none; border: none; cursor: pointer; flex-shrink: 0;
+  color: var(--txt-dim); font-size: 15px; padding: 12px 18px; white-space: nowrap;
   border-bottom: 2px solid transparent; margin-bottom: -1px;
 }
 .tabs button.on { color: var(--gold); border-color: var(--gold); }
@@ -503,10 +509,40 @@ em { font-style: normal; }
 @media (max-width: 760px) {
   .tabla { overflow-x: auto; }
   .tr { grid-template-columns: 1.8fr 1fr 1fr 1.2fr 1.1fr 1.4fr; min-width: 640px; }
-  .modal-body { grid-template-columns: 1fr; }
-  .img-up { flex-direction: row; align-items: center; }
-  .img-up img, .img-ph { width: 120px; }
+  .modal-body { grid-template-columns: minmax(0, 1fr); }
+  .img-up { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .img-up img, .img-ph { width: 100px; flex-shrink: 0; }
   .hero h1 { font-size: 48px; }
   .pres-body { grid-template-columns: 1fr; }
   .pres-img { aspect-ratio: 4 / 3; max-height: 220px; }
+
+  /* Panel admin: cabecera y KPIs mas compactos */
+  .admin-head h1 { font-size: 30px; }
+  .cards-kpi { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .kpi { padding: 14px; }
+  .kpi span { font-size: 26px; }
+
+  /* Formulario de perfume: una sola columna en vez de Marca/Categoria lado a lado */
+  .dos { grid-template-columns: 1fr; }
+
+  /* Tamaños de frasco y decants: se desplazan horizontalmente en su propia
+     caja en vez de achicar las columnas hasta ser inusables o romper la pagina. */
+  .frascos-box, .decant-box { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .frasco-row, .frasco-th { min-width: 480px; }
+  .decant-tr, .decant-th { min-width: 420px; }
+
+  /* Pedidos: que el total y los botones de accion no se encimen */
+  .pedido footer { flex-wrap: wrap; }
+  .pedido-acciones { width: 100%; }
+  .pedido-acciones button { flex: 1; }
+
+  /* Imagen ampliada: boton de cerrar dentro del area visible */
+  .img-modal-x { top: 8px; right: 8px; }
+}
+
+@media (max-width: 420px) {
+  .logo-txt { font-size: 21px; }
+  .nav { gap: 2px; }
+  .nav a { padding: 8px 10px; font-size: 13px; }
+  .admin-head { gap: 10px; }
 }
