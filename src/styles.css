@@ -414,18 +414,9 @@ em { font-style: normal; }
 .inv-filtros { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
 .inv-filtros .buscar { flex: 1; min-width: 200px; }
 .inv-count { color: var(--txt-dim); font-size: 13px; white-space: nowrap; }
-.vista-toggle {
-  display: flex; gap: 4px; flex-wrap: wrap;
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: 999px; padding: 4px;
-}
-.vista-toggle button {
-  border: none; background: transparent; color: var(--txt-dim);
-  font-size: 12px; padding: 7px 12px; border-radius: 999px;
-  cursor: pointer; white-space: nowrap; transition: 0.2s;
-}
-.vista-toggle button:hover { color: var(--txt); }
-.vista-toggle button.on { background: var(--celeste); color: #062330; font-weight: 600; }
+.inv-selects { display: flex; flex-direction: column; gap: 8px; }
+.inv-selects .orden { width: 100%; }
+.vista-select { border-color: rgba(124,207,232,0.4); }
 
 /* Mosaico de inventario (admin): mismas tarjetas del catálogo, en 3 densidades */
 .inv-grid.grid-grande { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 26px; }

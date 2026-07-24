@@ -49,22 +49,24 @@
         [ngModel]="buscarInv()"
         (ngModelChange)="buscarInv.set($event)"
       />
-      <select class="orden" [ngModel]="ordenInv()" (ngModelChange)="ordenInv.set($event)">
-        <option value="reciente">Más recientes</option>
-        <option value="az">Nombre: A → Z</option>
-        <option value="za">Nombre: Z → A</option>
-        <option value="precio-desc">Precio: mayor a menor</option>
-        <option value="precio-asc">Precio: menor a mayor</option>
-        <option value="stock-desc">Stock: mayor a menor</option>
-        <option value="stock-asc">Stock: menor a mayor</option>
-      </select>
-      <span class="inv-count">{{ perfumesFiltrados().length }} de {{ perfumes().length }}</span>
-      <div class="vista-toggle" role="group" aria-label="Vista del inventario">
-        <button type="button" [class.on]="vistaInv() === 'lista'" (click)="vistaInv.set('lista')" title="Vista de lista">☰ Lista</button>
-        <button type="button" [class.on]="vistaInv() === 'grande'" (click)="vistaInv.set('grande')" title="Mosaico grande">▣ Grande</button>
-        <button type="button" [class.on]="vistaInv() === 'mediano'" (click)="vistaInv.set('mediano')" title="Mosaico mediano">▦ Mediano</button>
-        <button type="button" [class.on]="vistaInv() === 'pequeno'" (click)="vistaInv.set('pequeno')" title="Mosaico pequeño">⊞ Pequeño</button>
+      <div class="inv-selects">
+        <select class="orden vista-select" [ngModel]="vistaInv()" (ngModelChange)="vistaInv.set($event)">
+          <option value="lista">☰ Vista de lista</option>
+          <option value="grande">▣ Mosaico grande</option>
+          <option value="mediano">▦ Mosaico mediano</option>
+          <option value="pequeno">⊞ Mosaico pequeño</option>
+        </select>
+        <select class="orden" [ngModel]="ordenInv()" (ngModelChange)="ordenInv.set($event)">
+          <option value="reciente">Más recientes</option>
+          <option value="az">Nombre: A → Z</option>
+          <option value="za">Nombre: Z → A</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="stock-desc">Stock: mayor a menor</option>
+          <option value="stock-asc">Stock: menor a mayor</option>
+        </select>
       </div>
+      <span class="inv-count">{{ perfumesFiltrados().length }} de {{ perfumes().length }}</span>
     </div>
 
     @if (importando() || importMsg()) {
