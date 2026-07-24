@@ -59,6 +59,12 @@
         <option value="stock-asc">Stock: menor a mayor</option>
       </select>
       <span class="inv-count">{{ perfumesFiltrados().length }} de {{ perfumes().length }}</span>
+      <div class="vista-toggle" role="group" aria-label="Vista del inventario">
+        <button type="button" [class.on]="vistaInv() === 'lista'" (click)="vistaInv.set('lista')" title="Vista de lista">☰ Lista</button>
+        <button type="button" [class.on]="vistaInv() === 'grande'" (click)="vistaInv.set('grande')" title="Mosaico grande">▣ Grande</button>
+        <button type="button" [class.on]="vistaInv() === 'mediano'" (click)="vistaInv.set('mediano')" title="Mosaico mediano">▦ Mediano</button>
+        <button type="button" [class.on]="vistaInv() === 'pequeno'" (click)="vistaInv.set('pequeno')" title="Mosaico pequeño">⊞ Pequeño</button>
+      </div>
     </div>
 
     @if (importando() || importMsg()) {
@@ -70,43 +76,87 @@
       </div>
     }
 
-    <div class="tabla">
-      <div class="tr th">
-        <span>Perfume</span><span>Categoría</span><span>Precio</span><span>Stock</span><span>Estado</span><span>Acciones</span>
-      </div>
-      @for (p of perfumesFiltrados(); track p.id) {
-        <div class="tr">
-          <span class="td-nombre">
-            <span class="mini">
-              @if (p.imagenUrl) { <img [src]="p.imagenUrl" [alt]="p.nombre" /> } @else { 🧴 }
+    @if (vistaInv() === 'lista') {
+      <div class="tabla">
+        <div class="tr th">
+          <span>Perfume</span><span>Categoría</span><span>Precio</span><span>Stock</span><span>Estado</span><span>Acciones</span>
+        </div>
+        @for (p of perfumesFiltrados(); track p.id) {
+          <div class="tr">
+            <span class="td-nombre">
+              <span class="mini">
+                @if (p.imagenUrl) { <img [src]="p.imagenUrl" [alt]="p.nombre" /> } @else { 🧴 }
+              </span>
+              <span>
+                <strong>{{ p.nombre }}</strong><br /><small>{{ p.marca }}</small>
+              </span>
+            </span>
+            <span>{{ p.categoria }}</span>
+            <span>{{ moneda }} {{ p.precio | number: '1.0-0' }}</span>
+            <span class="td-stock">
+              <button (click)="ajustarStock(p, -1)">−</button>
+              <b>{{ p.stock }}</b>
+              <button (click)="ajustarStock(p, 1)">+</button>
             </span>
             <span>
-              <strong>{{ p.nombre }}</strong><br /><small>{{ p.marca }}</small>
+              @switch (est(p.stock).tipo) {
+                @case ('agotado') { <em class="badge-pill b-agotado">Agotado</em> }
+                @case ('pocas') { <em class="badge-pill b-pocas">Quedan {{ p.stock }}</em> }
+                @default { <em class="badge-pill b-ok">Disponible</em> }
+              }
             </span>
-          </span>
-          <span>{{ p.categoria }}</span>
-          <span>{{ moneda }} {{ p.precio | number: '1.0-0' }}</span>
-          <span class="td-stock">
-            <button (click)="ajustarStock(p, -1)">−</button>
-            <b>{{ p.stock }}</b>
-            <button (click)="ajustarStock(p, 1)">+</button>
-          </span>
-          <span>
-            @switch (est(p.stock).tipo) {
-              @case ('agotado') { <em class="badge-pill b-agotado">Agotado</em> }
-              @case ('pocas') { <em class="badge-pill b-pocas">Quedan {{ p.stock }}</em> }
-              @default { <em class="badge-pill b-ok">Disponible</em> }
-            }
-          </span>
-          <span class="td-acciones">
-            <button class="mini-btn" (click)="editar(p)">Editar</button>
-            <button class="mini-btn del" (click)="eliminar(p)">Eliminar</button>
-          </span>
-        </div>
-      } @empty {
-        <p class="aviso">Aún no hay perfumes. Agrega el primero con “+ Nuevo perfume”.</p>
-      }
-    </div>
+            <span class="td-acciones">
+              <button class="mini-btn" (click)="editar(p)">Editar</button>
+              <button class="mini-btn del" (click)="eliminar(p)">Eliminar</button>
+            </span>
+          </div>
+        } @empty {
+          <p class="aviso">Aún no hay perfumes. Agrega el primero con “+ Nuevo perfume”.</p>
+        }
+      </div>
+    } @else {
+      <div
+        class="grid inv-grid"
+        [class.grid-grande]="vistaInv() === 'grande'"
+        [class.grid-mediano]="vistaInv() === 'mediano'"
+        [class.grid-pequeno]="vistaInv() === 'pequeno'"
+      >
+        @for (p of perfumesFiltrados(); track p.id) {
+          <article class="card admin-card" [class.agotado]="p.stock <= 0">
+            <div class="card-img">
+              @if (p.imagenUrl) {
+                <img [src]="p.imagenUrl" [alt]="p.nombre" loading="lazy" />
+              } @else {
+                <div class="sin-img"><span>🧴</span><small>{{ p.nombre }}</small></div>
+              }
+              @switch (est(p.stock).tipo) {
+                @case ('agotado') { <span class="badge b-agotado">AGOTADO</span> }
+                @case ('pocas') { <span class="badge b-pocas">Quedan {{ p.stock }}</span> }
+              }
+              <span class="cat">{{ p.categoria }}</span>
+            </div>
+            <div class="card-body">
+              <h3>{{ p.nombre }}</h3>
+              <p class="marca">{{ p.marca }}</p>
+              <div class="card-foot">
+                <span class="precio">{{ moneda }} {{ p.precio | number: '1.0-0' }}</span>
+                <span class="td-stock">
+                  <button (click)="ajustarStock(p, -1)">−</button>
+                  <b>{{ p.stock }}</b>
+                  <button (click)="ajustarStock(p, 1)">+</button>
+                </span>
+              </div>
+              <div class="admin-card-acciones">
+                <button class="mini-btn" (click)="editar(p)">Editar</button>
+                <button class="mini-btn del" (click)="eliminar(p)">Eliminar</button>
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <p class="aviso">Aún no hay perfumes. Agrega el primero con “+ Nuevo perfume”.</p>
+        }
+      </div>
+    }
   }
 
   <!-- Plantilla compartida por Pedidos y Pedidos rechazados -->

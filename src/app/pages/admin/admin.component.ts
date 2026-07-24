@@ -53,6 +53,8 @@ export class AdminComponent implements OnInit {
   pedidoMsg = signal('');
   buscarInv = signal('');
   ordenInv = signal<'reciente' | 'az' | 'za' | 'precio-asc' | 'precio-desc' | 'stock-asc' | 'stock-desc'>('reciente');
+  /** Cómo se muestra el inventario: lista (tabla) o mosaico de tarjetas en 3 tamaños. */
+  vistaInv = signal<'lista' | 'grande' | 'mediano' | 'pequeno'>('lista');
   editando = signal<Perfume | null>(null);
   guardando = signal(false);
   subiendo = signal(false);
