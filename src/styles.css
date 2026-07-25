@@ -525,8 +525,25 @@ em { font-style: normal; }
 .chk-decants input { width: auto; }
 
 @media (max-width: 760px) {
-  .tabla { overflow-x: auto; }
-  .tr { grid-template-columns: 1.8fr 1fr 1fr 1.2fr 1.1fr 1.4fr; min-width: 640px; }
+  /* Tabla de inventario: en vez de columnas fijas que obligan a deslizar
+     hacia la derecha, cada perfume se apila hacia abajo como una tarjeta
+     con sus datos etiquetados. */
+  .tabla { overflow-x: visible; }
+  .tr.th { display: none; }
+  .tr {
+    display: flex; flex-direction: column; align-items: stretch;
+    gap: 10px; min-width: 0;
+  }
+  .tr > span:not(.td-nombre) {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; border-top: 1px solid var(--line); padding-top: 8px; font-size: 13px;
+  }
+  .tr > span:not(.td-nombre)::before {
+    content: attr(data-label);
+    color: var(--txt-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .tr > span.td-acciones { flex-direction: column; align-items: stretch; }
+  .tr > span.td-acciones .mini-btn { flex: 1; }
   .modal-body { grid-template-columns: minmax(0, 1fr); }
   .img-up { flex-direction: row; align-items: center; flex-wrap: wrap; }
   .img-up img, .img-ph { width: 100px; flex-shrink: 0; }

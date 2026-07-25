@@ -93,21 +93,21 @@
                 <strong>{{ p.nombre }}</strong><br /><small>{{ p.marca }}</small>
               </span>
             </span>
-            <span>{{ p.categoria }}</span>
-            <span>{{ moneda }} {{ p.precio | number: '1.0-0' }}</span>
-            <span class="td-stock">
+            <span data-label="Categoría">{{ p.categoria }}</span>
+            <span data-label="Precio">{{ moneda }} {{ p.precio | number: '1.0-0' }}</span>
+            <span class="td-stock" data-label="Stock">
               <button (click)="ajustarStock(p, -1)">−</button>
               <b>{{ p.stock }}</b>
               <button (click)="ajustarStock(p, 1)">+</button>
             </span>
-            <span>
+            <span data-label="Estado">
               @switch (est(p.stock).tipo) {
                 @case ('agotado') { <em class="badge-pill b-agotado">Agotado</em> }
                 @case ('pocas') { <em class="badge-pill b-pocas">Quedan {{ p.stock }}</em> }
                 @default { <em class="badge-pill b-ok">Disponible</em> }
               }
             </span>
-            <span class="td-acciones">
+            <span class="td-acciones" data-label="Acciones">
               <button class="mini-btn" (click)="editar(p)">Editar</button>
               <button class="mini-btn del" (click)="eliminar(p)">Eliminar</button>
             </span>
