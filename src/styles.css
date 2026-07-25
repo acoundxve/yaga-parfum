@@ -229,6 +229,7 @@ em { font-style: normal; }
 .marca { color: var(--gold); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin: 2px 0 8px; }
 .desc { color: var(--txt-dim); font-size: 13px; line-height: 1.5; flex: 1; }
 .card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; gap: 10px; }
+.card-foot .btn-off:only-child { width: 100%; }
 .precio { font-size: 20px; font-weight: 700; }
 .btn-notas {
   margin-top: 10px; width: 100%;

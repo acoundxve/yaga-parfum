@@ -41,13 +41,13 @@ import { environment } from '../../../environments/environment';
         <p class="desc">{{ perfume.descripcion }}</p>
 
         <div class="card-foot">
-          <span class="precio">
-            @if (varios) { <small class="desde">desde</small> }
-            {{ moneda }} {{ desde | number: '1.0-0' }}
-          </span>
           @if (agotado) {
             <button class="btn btn-off" disabled>Agotado</button>
           } @else {
+            <span class="precio">
+              @if (varios) { <small class="desde">desde</small> }
+              {{ moneda }} {{ desde | number: '1.0-0' }}
+            </span>
             <button class="btn" (click)="agregar.emit(perfume)">Encargar</button>
           }
         </div>
