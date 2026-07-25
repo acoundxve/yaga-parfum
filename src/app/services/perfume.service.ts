@@ -75,6 +75,41 @@ export class PerfumeService {
     return this.sb.configurado;
   }
 
+  constructor() {
+    if (this.usaSupabase) {
+      this.escucharCambiosPerfumes();
+    }
+  }
+
+  /** Suscripción en tiempo real: si un perfume cambia (en este dispositivo
+   *  u otro), refleja el cambio al instante en todas las pestañas abiertas
+   *  (catálogo y panel) sin necesidad de recargar la página. */
+  private escucharCambiosPerfumes(): void {
+    this.sb.client!
+      .channel('perfumes-cambios')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'perfumes' },
+        (payload) => {
+          const lista = this.perfumes();
+          if (payload.eventType === 'DELETE') {
+            this.perfumes.set(lista.filter((p) => p.id !== (payload.old as any).id));
+            return;
+          }
+          const actualizado = fromRow(payload.new);
+          const idx = lista.findIndex((p) => p.id === actualizado.id);
+          if (idx === -1) {
+            this.perfumes.set([actualizado, ...lista]);
+          } else {
+            const copia = [...lista];
+            copia[idx] = actualizado;
+            this.perfumes.set(copia);
+          }
+        }
+      )
+      .subscribe();
+  }
+
   // ---------- PERFUMES ----------
 
   async cargarPerfumes(): Promise<void> {

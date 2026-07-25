@@ -140,3 +140,18 @@ create policy "ventas_insert" on public.ventas for insert with check (true);
 --  que no tiene sentido vender en muestras de 2/5/10 ml)
 -- ============================================================
 alter table public.perfumes add column if not exists permite_decants boolean not null default true;
+
+-- ============================================================
+--  Tiempo real: que un cambio a un perfume (precio, foto, stock…)
+--  se refleje solo, sin recargar la página, en cualquier pestaña
+--  abierta (catálogo o panel de admin).
+-- ============================================================
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'perfumes'
+  ) then
+    alter publication supabase_realtime add table public.perfumes;
+  end if;
+end $$;
