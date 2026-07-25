@@ -59,10 +59,6 @@ export class AdminComponent implements OnInit {
   guardando = signal(false);
   subiendo = signal(false);
 
-  importando = signal(false);
-  importProgreso = signal(0);
-  importMsg = signal('');
-
   totalInventario = computed(() =>
     this.perfumes().reduce((s, p) => s + p.stock, 0)
   );
@@ -378,41 +374,6 @@ export class AdminComponent implements OnInit {
       alert(e?.message ?? 'No se pudo registrar la venta.');
     } finally {
       this.vrGuardando.set(false);
-    }
-  }
-
-  get puedeImportar(): boolean {
-    return this.usaSupabase;
-  }
-
-  async importarCatalogo() {
-    if (!this.usaSupabase) {
-      alert('Primero conecta Supabase (environment.ts) y ejecuta supabase.sql.');
-      return;
-    }
-    if (
-      !confirm(
-        'Esto reemplaza el catálogo actual con los 391 perfumes del PDF. ¿Continuar?'
-      )
-    )
-      return;
-    this.importando.set(true);
-    this.importProgreso.set(0);
-    this.importMsg.set('Importando…');
-    try {
-      const n = await this.data.importarCatalogo((hechos, total) => {
-        this.importProgreso.set(Math.round((hechos / total) * 100));
-        this.importMsg.set(`Importando ${hechos} / ${total}…`);
-      });
-      this.importMsg.set(`✅ ${n} perfumes importados.`);
-    } catch (e: any) {
-      console.error(e);
-      this.importMsg.set('❌ Error: ' + (e?.message ?? 'no se pudo importar'));
-      alert(
-        'No se pudo importar. Verifica que ejecutaste supabase.sql (tablas creadas) y que las políticas permiten insertar.'
-      );
-    } finally {
-      this.importando.set(false);
     }
   }
 }

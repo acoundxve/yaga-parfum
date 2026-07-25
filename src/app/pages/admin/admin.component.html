@@ -34,11 +34,6 @@
   @if (tab() === 'inventario') {
     <div class="barra-inv">
       <button class="btn" (click)="nuevo()">+ Nuevo perfume</button>
-      @if (puedeImportar) {
-        <button class="btn btn-ghost" [disabled]="importando()" (click)="importarCatalogo()">
-          {{ importando() ? 'Cargando…' : '⬇ Cargar los 391 perfumes al inventario' }}
-        </button>
-      }
     </div>
 
     <div class="inv-filtros">
@@ -68,15 +63,6 @@
       </div>
       <span class="inv-count">{{ perfumesFiltrados().length }} de {{ perfumes().length }}</span>
     </div>
-
-    @if (importando() || importMsg()) {
-      <div class="import-box">
-        <span>{{ importMsg() }}</span>
-        @if (importando()) {
-          <div class="import-bar"><div [style.width.%]="importProgreso()"></div></div>
-        }
-      </div>
-    }
 
     @if (vistaInv() === 'lista') {
       <div class="tabla">
