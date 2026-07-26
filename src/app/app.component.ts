@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './services/auth.service';
 import { CarritoService } from './services/carrito.service';
+import { ThemeService } from './services/theme.service';
 import { environment } from '../environments/environment';
 
 @Component({
@@ -24,6 +25,15 @@ import { environment } from '../environments/environment';
           <a routerLink="/admin" routerLinkActive="activo">Panel</a>
           <a class="salir" (click)="auth.logout()">Salir</a>
         }
+        <button
+          type="button"
+          class="theme-toggle"
+          (click)="theme.alternar()"
+          [attr.aria-label]="theme.tema() === 'claro' ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro'"
+          [title]="theme.tema() === 'claro' ? 'Tema oscuro' : 'Tema claro'"
+        >
+          {{ theme.tema() === 'claro' ? '🌙' : '☀️' }}
+        </button>
       </nav>
     </header>
 
@@ -39,6 +49,7 @@ import { environment } from '../environments/environment';
 export class AppComponent {
   auth = inject(AuthService);
   carrito = inject(CarritoService);
+  theme = inject(ThemeService);
   negocio = environment.nombreNegocio;
   logoPrimero = this.negocio.split(' ')[0];
   logoResto = this.negocio.split(' ').slice(1).join(' ');

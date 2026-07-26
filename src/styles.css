@@ -20,6 +20,29 @@
   --wa: #25d366;
   --radio: 16px;
   --sombra: 0 20px 60px rgba(0, 0, 0, 0.45);
+  /* Velo sobre la imagen de fondo: oscuro en tema oscuro, claro en tema claro */
+  --velo-1: rgba(11, 11, 15, 0.38);
+  --velo-2: rgba(11, 11, 15, 0.72);
+}
+
+/* ---------- Tema claro ---------- */
+:root[data-theme='light'] {
+  --bg: #f7f4ee;
+  --bg-2: #ece7db;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-solid: #ffffff;
+  --line: rgba(20, 16, 10, 0.1);
+  --txt: #241f18;
+  --txt-dim: #6b6459;
+  --gold: #a3721f;
+  --gold-2: #c9973f;
+  --celeste: #0f8fc7;
+  --danger: #d43a3a;
+  --warn: #b06b00;
+  --ok: #1f9d5c;
+  --sombra: 0 20px 50px rgba(60, 45, 20, 0.14);
+  --velo-1: rgba(255, 250, 240, 0.4);
+  --velo-2: rgba(247, 244, 238, 0.88);
 }
 
 * { box-sizing: border-box; }
@@ -54,15 +77,23 @@ em { font-style: normal; }
   position: fixed;
   inset: 0;
   z-index: -2;
+  /* En iOS, position:fixed + background-attachment:fixed junto con la barra
+     de Safari que aparece/desaparece hace que este fondo parpadee o
+     desaparezca al hacer scroll. Con solo position:fixed (sin
+     background-attachment) y un layer de composición propio (transform)
+     se queda fijo y estable. */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   /* Capas (de arriba a abajo):
-     1) velo oscuro para que el texto se lea
+     1) velo para que el texto se lea (oscuro o claro según el tema)
      2) tu imagen real: guarda tu foto de Light Yagami como public/fondo-yaga.jpg
      3) placeholder mientras no exista la foto */
   background:
-    linear-gradient(180deg, rgba(11, 11, 15, 0.38) 0%, rgba(11, 11, 15, 0.72) 60%, var(--bg) 100%),
+    linear-gradient(180deg, var(--velo-1) 0%, var(--velo-2) 60%, var(--bg) 100%),
     url('/fondo-yaga.jpg') center top / cover no-repeat,
     url('/fondo-yaga.svg') center top / cover no-repeat;
-  background-attachment: fixed, fixed, fixed;
 }
 .fondo-yaga::after {
   content: '';
@@ -115,6 +146,14 @@ em { font-style: normal; }
 .nav a:hover { color: var(--txt); background: rgba(255,255,255,0.05); }
 .nav a.activo { color: var(--gold); }
 .nav a.salir { color: var(--danger); }
+.theme-toggle {
+  display: grid; place-items: center;
+  width: 34px; height: 34px; margin-left: 4px;
+  border-radius: 999px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--txt);
+  font-size: 15px; cursor: pointer; transition: 0.2s;
+}
+.theme-toggle:hover { border-color: var(--gold); transform: translateY(-1px); }
 
 .contenido { min-height: 70vh; padding: 0 clamp(16px, 4vw, 48px) 80px; }
 
