@@ -14,7 +14,7 @@ import { environment } from '../environments/environment';
 
     <header class="barra">
       <a routerLink="/" class="logo">
-        <span class="logo-mark">Y</span>
+        <span class="logo-mark" role="img" [attr.aria-label]="negocio"></span>
         <span class="logo-txt">{{ negocio }}<small>parfum</small></span>
       </a>
 
