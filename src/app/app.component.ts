@@ -15,7 +15,7 @@ import { environment } from '../environments/environment';
     <header class="barra">
       <a routerLink="/" class="logo">
         <span class="logo-mark" role="img" [attr.aria-label]="negocio"></span>
-        <span class="logo-txt">{{ negocio }}<small>parfum</small></span>
+        <span class="logo-txt">{{ logoPrimero }} <span class="logo-grad">{{ logoResto }}</span></span>
       </a>
 
       <nav class="nav">
@@ -40,5 +40,7 @@ export class AppComponent {
   auth = inject(AuthService);
   carrito = inject(CarritoService);
   negocio = environment.nombreNegocio;
+  logoPrimero = this.negocio.split(' ')[0];
+  logoResto = this.negocio.split(' ').slice(1).join(' ');
   anio = new Date().getFullYear();
 }
